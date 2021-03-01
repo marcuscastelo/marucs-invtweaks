@@ -9,17 +9,15 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.math.MathHelper;
 
 import java.util.*;
 
-public class InvTweaksVanillaBehavior implements IInvTweaksBehavior {
-    public static InvTweaksVanillaBehavior INSTANCE = new InvTweaksVanillaBehavior();
+public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
+    public static InvTweaksVanillaGenericBehavior INSTANCE = new InvTweaksVanillaGenericBehavior();
 
-    private int moveToSlot(ScreenHandler handler, int maxSlot, int fromSlotId, int toSlotId, int quantity, boolean sorting) {
+    protected int moveToSlot(ScreenHandler handler, int maxSlot, int fromSlotId, int toSlotId, int quantity, boolean sorting) {
         int from = fromSlotId;
         ItemStack initialStack = handler.getSlot(from).getStack().copy();
         int initialCount = initialStack.getCount();
@@ -107,7 +105,7 @@ public class InvTweaksVanillaBehavior implements IInvTweaksBehavior {
         return candidateDestination;
     }
 
-    private int moveToInventory(ScreenHandler handler, int fromSlot, InventoryContainerBoundInfo destinationBoundInfo, int quantity, boolean sorting) {
+    protected int moveToInventory(ScreenHandler handler, int fromSlot, InventoryContainerBoundInfo destinationBoundInfo, int quantity, boolean sorting) {
         int destinationStart = destinationBoundInfo.start;
         int inventorySize = destinationBoundInfo.getSize();
         return moveToSlot(handler, destinationStart+inventorySize-1, fromSlot, destinationStart, quantity, sorting);

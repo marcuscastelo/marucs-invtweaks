@@ -1,7 +1,6 @@
 package io.github.marcuscastelo.invtweaks;
 
 import io.github.marcuscastelo.invtweaks.client.behavior.IInvTweaksBehavior;
-import io.github.marcuscastelo.invtweaks.client.behavior.InvTweaksVanillaBehavior;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public enum InvTweaksOperationType {
