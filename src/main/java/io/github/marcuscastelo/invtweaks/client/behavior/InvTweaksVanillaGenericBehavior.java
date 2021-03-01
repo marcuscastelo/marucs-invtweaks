@@ -11,6 +11,7 @@ import net.minecraft.item.Items;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.math.MathHelper;
 
 import java.util.*;
@@ -23,6 +24,7 @@ public class InvTweaksVanillaBehavior implements IInvTweaksBehavior {
         ItemStack initialStack = handler.getSlot(from).getStack().copy();
         int initialCount = initialStack.getCount();
         if (quantity > initialCount) {
+            System.out.println("Trying to move more than we have InvTweaksVanillaBehavior@moveToSlot");
             return -1;
         }
 
@@ -30,27 +32,30 @@ public class InvTweaksVanillaBehavior implements IInvTweaksBehavior {
         ClientPlayerEntity player = MinecraftClient.getInstance().player;
 
         if (interactionManager == null || player == null) {
-            System.out.println("nullptr in InventoryHelper@moveSome");
+            System.out.println("nullptr in InvTweaksVanillaBehavior@moveSome");
             return -2;
         }
 
         //Item in hand
-        interactionManager.clickSlot(handler.syncId, from, 0, SlotActionType.PICKUP, player);
+        ItemStack currentHeldStack = interactionManager.clickSlot(handler.syncId, from, 0, SlotActionType.PICKUP, player);
 
         int remainingTotalClicks = quantity;
         int candidateDestination = toSlotId;
         for (;remainingTotalClicks > 0 && candidateDestination <= maxSlot; candidateDestination++) {
-            ItemStack candidateToStack = handler.slots.get(candidateDestination).getStack();
 
-            if (candidateToStack.getItem() != initialStack.getItem()) {
-                if (candidateToStack.getItem() == Items.AIR) {
+            if (!handler.canInsertIntoSlot(currentHeldStack, handler.slots.get(candidateDestination))) continue;
+
+            ItemStack candidateDstStack = handler.slots.get(candidateDestination).getStack();
+
+            if (candidateDstStack.getItem() != initialStack.getItem()) {
+                if (candidateDstStack.getItem() == Items.AIR) {
                     //If air, just put
                     int rightClicks = MathHelper.clamp(remainingTotalClicks, 0, initialStack.getMaxCount());
                     if (rightClicks == initialStack.getMaxCount()) {
                         interactionManager.clickSlot(handler.syncId,candidateDestination,0,SlotActionType.PICKUP,player);
                     }
                     else {
-                        //TODO: send one packet, instead of an avalanche
+                        //TODO: send one packet, instead of a flood
                         for (int i = 0; i < rightClicks; i++) {
                             interactionManager.clickSlot(handler.syncId, candidateDestination, 1, SlotActionType.PICKUP, player);
                         }
@@ -66,15 +71,15 @@ public class InvTweaksVanillaBehavior implements IInvTweaksBehavior {
 
                     if (dumpWrongStackSlot > maxSlot) { //If there's no more room
                         //Returns remaining
-                        interactionManager.clickSlot(handler.syncId, from, 0, SlotActionType.PICKUP, player);
+                        currentHeldStack = interactionManager.clickSlot(handler.syncId, from, 0, SlotActionType.PICKUP, player);
                         return -3;
                     }
 
                     //Swap right and wrong
-                    interactionManager.clickSlot(handler.syncId, candidateDestination, 0, SlotActionType.PICKUP, player);
+                    currentHeldStack = interactionManager.clickSlot(handler.syncId, candidateDestination, 0, SlotActionType.PICKUP, player);
 
                     //Dump wrong
-                    interactionManager.clickSlot(handler.syncId, dumpWrongStackSlot, 0, SlotActionType.PICKUP, player);
+                    currentHeldStack = interactionManager.clickSlot(handler.syncId, dumpWrongStackSlot, 0, SlotActionType.PICKUP, player);
 
                     return candidateDestination;
                 }
@@ -83,14 +88,13 @@ public class InvTweaksVanillaBehavior implements IInvTweaksBehavior {
 
             //If same type:
 
-            int clicksToCompleteStack = candidateToStack.getMaxCount() - candidateToStack.getCount();
-            int rightClicks;
+            int clicksToCompleteStack = candidateDstStack.getMaxCount() - candidateDstStack.getCount();
+            int rightClicks = MathHelper.clamp(remainingTotalClicks, 0, clicksToCompleteStack);
 
-            rightClicks = MathHelper.clamp(remainingTotalClicks, 0, clicksToCompleteStack);
-
-            //TODO: send one packet
-            for (int i = 0; i < rightClicks; i++)
-                interactionManager.clickSlot(handler.syncId, candidateDestination, 1, SlotActionType.PICKUP, player);
+            if (rightClicks > 0 && remainingTotalClicks >= clicksToCompleteStack)
+                currentHeldStack = interactionManager.clickSlot(handler.syncId, candidateDestination, 0, SlotActionType.PICKUP, player);
+            else for (int i = 0; i < rightClicks; i++)
+                currentHeldStack = interactionManager.clickSlot(handler.syncId, candidateDestination, 1, SlotActionType.PICKUP, player);
 
             remainingTotalClicks -= rightClicks;
         }
@@ -103,10 +107,10 @@ public class InvTweaksVanillaBehavior implements IInvTweaksBehavior {
         return candidateDestination;
     }
 
-    private int moveToInventory(ScreenHandler container, int fromSlot, InventoryContainerBoundInfo destinationBoundInfo, int quantity, boolean sorting) {
+    private int moveToInventory(ScreenHandler handler, int fromSlot, InventoryContainerBoundInfo destinationBoundInfo, int quantity, boolean sorting) {
         int destinationStart = destinationBoundInfo.start;
         int inventorySize = destinationBoundInfo.getSize();
-        return moveToSlot(container, destinationStart+inventorySize-1, fromSlot, destinationStart, quantity, sorting);
+        return moveToSlot(handler, destinationStart+inventorySize-1, fromSlot, destinationStart, quantity, sorting);
     }
 
     @Override
