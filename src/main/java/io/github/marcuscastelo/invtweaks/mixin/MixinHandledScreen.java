@@ -5,6 +5,8 @@ import io.github.marcuscastelo.invtweaks.InvTweaksOperationType;
 import io.github.marcuscastelo.invtweaks.InventoryContainerBoundInfo;
 import io.github.marcuscastelo.invtweaks.api.ScreenInfo;
 import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry;
+import io.github.marcuscastelo.invtweaks.tests.ITScreenControllerTest;
+import io.github.marcuscastelo.invtweaks.util.ITScreenController;
 import net.minecraft.block.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
@@ -147,8 +149,12 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> {
 
         } else return;
 
+        ITScreenController controller = new ITScreenController(handler);
+
         try {
-            InvTweaksBehaviorRegistry.executeOperation(handler.getClass(), operationInfo);
+            ITScreenControllerTest test = new ITScreenControllerTest(controller, screenInfo);
+            test.testSort(clickedInventoryBoundInfo);
+            //InvTweaksBehaviorRegistry.executeOperation(handler.getClass(), operationInfo);
         } catch (IllegalArgumentException e) {
             MinecraftClient.getInstance().player.sendMessage(new LiteralText("This container is not supported by Marucs' Invtweaks"), false);
         }

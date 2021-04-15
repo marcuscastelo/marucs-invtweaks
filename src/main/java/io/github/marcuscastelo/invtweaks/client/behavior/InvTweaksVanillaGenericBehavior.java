@@ -2,6 +2,7 @@ package io.github.marcuscastelo.invtweaks.client.behavior;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
 import io.github.marcuscastelo.invtweaks.InventoryContainerBoundInfo;
+import io.github.marcuscastelo.invtweaks.util.ITScreenController;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
@@ -15,11 +16,8 @@ import net.minecraft.util.math.MathHelper;
 import java.util.*;
 
 public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
-    public static InvTweaksVanillaGenericBehavior INSTANCE = new InvTweaksVanillaGenericBehavior();
-
     protected int moveToSlot(ScreenHandler handler, int maxSlot, int fromSlotId, int toSlotId, int quantity, boolean sorting) {
-        int from = fromSlotId;
-        ItemStack initialStack = handler.getSlot(from).getStack().copy();
+        ItemStack initialStack = handler.getSlot(fromSlotId).getStack().copy();
         int initialCount = initialStack.getCount();
         if (quantity > initialCount) {
             System.out.println("Trying to move more than we have InvTweaksVanillaBehavior@moveToSlot");
@@ -35,7 +33,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
         }
 
         //Item in hand
-        ItemStack currentHeldStack = interactionManager.clickSlot(handler.syncId, from, 0, SlotActionType.PICKUP, player);
+        ItemStack currentHeldStack = interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player);
 
         int remainingTotalClicks = quantity;
         int candidateDestination = toSlotId;
@@ -69,7 +67,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
 
                     if (dumpWrongStackSlot > maxSlot) { //If there's no more room
                         //Returns remaining
-                        currentHeldStack = interactionManager.clickSlot(handler.syncId, from, 0, SlotActionType.PICKUP, player);
+                        currentHeldStack = interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player);
                         return -3;
                     }
 
@@ -99,7 +97,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
 
         //Place remaining back
         if (initialCount - quantity > 0)
-            interactionManager.clickSlot(handler.syncId, from, 0, SlotActionType.PICKUP, player);
+            interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player);
 
         if (candidateDestination > toSlotId) candidateDestination--;
         return candidateDestination;

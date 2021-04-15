@@ -4,6 +4,7 @@ import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
 import io.github.marcuscastelo.invtweaks.api.ScreenInfo;
 import io.github.marcuscastelo.invtweaks.client.behavior.InvTweaksVanillaGenericBehavior;
 import io.github.marcuscastelo.invtweaks.client.behavior.InvTweaksVanillaMerchantBehavior;
+import io.github.marcuscastelo.invtweaks.client.behavior.InvTweaksVanillaPlayerBehaviour;
 import net.minecraft.screen.*;
 
 import java.util.HashMap;
@@ -36,7 +37,7 @@ public class InvTweaksBehaviorRegistry {
     }
 
     public static ScreenInfo.Builder createVanillaGenericScreenInfoBuilder(Class<? extends ScreenHandler> handlerClass) {
-        return createScreenInfoBuilder(handlerClass).setBehavior(InvTweaksVanillaGenericBehavior.INSTANCE);
+        return createScreenInfoBuilder(handlerClass).setBehavior(new InvTweaksVanillaGenericBehavior());
     }
 
     public static ScreenInfo buildDefaultedVanillaGenericScreenInfo(Class<? extends ScreenHandler> handlerClass) {
@@ -62,8 +63,9 @@ public class InvTweaksBehaviorRegistry {
         register(buildDefaultedVanillaGenericScreenInfo(GrindstoneScreenHandler.class));
         register(buildDefaultedVanillaGenericScreenInfo(HorseScreenHandler.class));
 
-        register(createVanillaGenericScreenInfoBuilder(PlayerScreenHandler.class).setPlayerInvTotalSize(37).build());
-        register(createScreenInfoBuilder(MerchantScreenHandler.class).setBehavior(InvTweaksVanillaMerchantBehavior.INSTANCE).build());
+
+        register(createScreenInfoBuilder(PlayerScreenHandler.class).setBehavior(new InvTweaksVanillaPlayerBehaviour()).setPlayerInvTotalSize(37).build());
+        register(createScreenInfoBuilder(MerchantScreenHandler.class).setBehavior(new InvTweaksVanillaMerchantBehavior()).build());
     }
 
 }

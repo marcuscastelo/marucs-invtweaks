@@ -3,6 +3,8 @@ package io.github.marcuscastelo.invtweaks.api;
 import io.github.marcuscastelo.invtweaks.client.behavior.IInvTweaksBehavior;
 import net.minecraft.screen.ScreenHandler;
 
+import java.util.Optional;
+
 public final class ScreenInfo {
     private static final int DEFAULT_PLAYER_MAIN_INV_SIZE = 27;
     private static final int DEFAULT_PLAYER_HOTBAR_SIZE = 9;
