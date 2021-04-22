@@ -1,12 +1,12 @@
-package io.github.marcuscastelo.invtweaks;
+package io.github.marcuscastelo.invtweaks.inventory;
 
 import net.minecraft.screen.ScreenHandler;
 
-public class InventoryContainerBoundInfo {
+public class ScreenInventory {
     public final ScreenHandler screenHandler;
     public final int start, end;
 
-    public InventoryContainerBoundInfo(ScreenHandler screenHandler, int start, int end) {
+    public ScreenInventory(ScreenHandler screenHandler, int start, int end) {
         this.screenHandler = screenHandler;
         this.start = start;
         this.end = end;

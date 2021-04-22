@@ -1,8 +1,7 @@
 package io.github.marcuscastelo.invtweaks.client.behavior;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
-import io.github.marcuscastelo.invtweaks.InventoryContainerBoundInfo;
-import io.github.marcuscastelo.invtweaks.util.ITScreenController;
+import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
@@ -103,7 +102,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
         return candidateDestination;
     }
 
-    protected int moveToInventory(ScreenHandler handler, int fromSlot, InventoryContainerBoundInfo destinationBoundInfo, int quantity, boolean sorting) {
+    protected int moveToInventory(ScreenHandler handler, int fromSlot, ScreenInventory destinationBoundInfo, int quantity, boolean sorting) {
         int destinationStart = destinationBoundInfo.start;
         int inventorySize = destinationBoundInfo.getSize();
         return moveToSlot(handler, destinationStart+inventorySize-1, fromSlot, destinationStart, quantity, sorting);

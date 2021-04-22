@@ -1,11 +1,8 @@
 package io.github.marcuscastelo.invtweaks.client.behavior;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
-import io.github.marcuscastelo.invtweaks.InventoryContainerBoundInfo;
-import net.minecraft.entity.passive.VillagerEntity;
-import net.minecraft.item.Item;
+import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.screen.MerchantScreenHandler;
 import net.minecraft.util.math.MathHelper;
 
 import java.util.Arrays;
@@ -95,16 +92,16 @@ public class InvTweaksVanillaMerchantBehavior extends InvTweaksVanillaGenericBeh
     }
 
     private void prepareNewTrade(InvTweaksOperationInfo operationInfo, int[] fromSlots) {
-        InventoryContainerBoundInfo cbi = operationInfo.clickedInventoryBoundInfo;
-        InventoryContainerBoundInfo obi = operationInfo.otherInventoryBoundInfo;
+        ScreenInventory cbi = operationInfo.clickedInventoryBoundInfo;
+        ScreenInventory obi = operationInfo.otherInventoryBoundInfo;
 
         for (int i = 0; i < fromSlots.length; i++)
             moveToSlot(cbi.screenHandler, cbi.end, fromSlots[i], cbi.start+i, obi.screenHandler.slots.get(fromSlots[i]).getStack().getCount() , false);
     }
 
     private void takeTrade(InvTweaksOperationInfo operationInfo) {
-        InventoryContainerBoundInfo cbi = operationInfo.clickedInventoryBoundInfo;
-        InventoryContainerBoundInfo obi = operationInfo.otherInventoryBoundInfo;
+        ScreenInventory cbi = operationInfo.clickedInventoryBoundInfo;
+        ScreenInventory obi = operationInfo.otherInventoryBoundInfo;
 
         moveToInventory(cbi.screenHandler, VILLAGER_OUTPUT_SLOT, obi, cbi.screenHandler.slots.get(VILLAGER_OUTPUT_SLOT).getStack().getCount(), false);
     }

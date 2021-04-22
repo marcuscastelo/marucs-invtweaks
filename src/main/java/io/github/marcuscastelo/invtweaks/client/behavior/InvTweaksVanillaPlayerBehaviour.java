@@ -1,7 +1,7 @@
 package io.github.marcuscastelo.invtweaks.client.behavior;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
-import io.github.marcuscastelo.invtweaks.InventoryContainerBoundInfo;
+import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import net.minecraft.screen.ScreenHandler;
 
 public class InvTweaksVanillaPlayerBehaviour extends InvTweaksVanillaGenericBehavior {
@@ -11,7 +11,7 @@ public class InvTweaksVanillaPlayerBehaviour extends InvTweaksVanillaGenericBeha
     }
 
     @Override
-    protected int moveToInventory(ScreenHandler handler, int fromSlot, InventoryContainerBoundInfo destinationBoundInfo, int quantity, boolean sorting) {
+    protected int moveToInventory(ScreenHandler handler, int fromSlot, ScreenInventory destinationBoundInfo, int quantity, boolean sorting) {
         return super.moveToInventory(handler, fromSlot, destinationBoundInfo, quantity, sorting);
     }
 

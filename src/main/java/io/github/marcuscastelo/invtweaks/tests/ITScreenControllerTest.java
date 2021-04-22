@@ -1,12 +1,9 @@
 package io.github.marcuscastelo.invtweaks.tests;
 
-import com.sun.rowset.JdbcRowSetResourceBundle;
-import io.github.marcuscastelo.invtweaks.InventoryContainerBoundInfo;
-import io.github.marcuscastelo.invtweaks.api.ScreenInfo;
-import io.github.marcuscastelo.invtweaks.util.ITScreenController;
+import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
+import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
+import io.github.marcuscastelo.invtweaks.util.InvTweaksScreenController;
 import io.github.marcuscastelo.invtweaks.util.ItemStackUtils;
-import io.github.marcuscastelo.invtweaks.util.SorterUtils;
-import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -14,20 +11,20 @@ import net.minecraft.item.Items;
 import java.util.*;
 
 public class ITScreenControllerTest {
-    private final ITScreenController controller;
-    private final ScreenInfo screenInfo;
-    public ITScreenControllerTest(ITScreenController controller, ScreenInfo screenInfo) {
+    private final InvTweaksScreenController controller;
+    private final ScreenSpecification screenSpecification;
+    public ITScreenControllerTest(InvTweaksScreenController controller, ScreenSpecification screenSpecification) {
         this.controller = controller;
-        this.screenInfo = screenInfo;
+        this.screenSpecification = screenSpecification;
     }
 
-    public void testSpreadStack(InventoryContainerBoundInfo boundInfo) {
+    public void testSpreadStack(ScreenInventory boundInfo) {
         controller.pickStack(boundInfo.start);
         for (int i = boundInfo.start; i <= boundInfo.end; i++)
             controller.placeOne(i);
     }
 
-    public void shiftStacksRight(InventoryContainerBoundInfo boundInfo) {
+    public void shiftStacksRight(ScreenInventory boundInfo) {
         controller.pickStack(boundInfo.start);
         for (int i = boundInfo.start + 1; i <= boundInfo.end; i++) {
             if (controller.isHoldingStack())
@@ -80,7 +77,7 @@ public class ITScreenControllerTest {
 
             //Places stack held by the controller (may end up having another stack being held).
             //Returns last slot
-            public int placeHeldStack(ITScreenController controller) {
+            public int placeHeldStack(InvTweaksScreenController controller) {
                 assert controller.isHoldingStack();
                 int targetSlot;
                 boolean dbg_other_type = false;
@@ -116,9 +113,9 @@ public class ITScreenControllerTest {
         private final Map<Item, StackGroup> stackGroups = new HashMap<>();
         private final List<Item> itemList;
 
-        private final InventoryContainerBoundInfo boundInfo;
+        private final ScreenInventory boundInfo;
 
-        public StacksSorter(InventoryContainerBoundInfo boundInfo) {
+        public StacksSorter(ScreenInventory boundInfo) {
             this.boundInfo = boundInfo;
             this.itemList = new ArrayList<>();
         }
@@ -136,9 +133,16 @@ public class ITScreenControllerTest {
             stackGroup.addStack(stack);
         }
 
+        public void sort() {
+            itemList.sort(Comparator.comparing(Item::getRawId));
+        }
+
+        public void shuffle() {
+            Collections.shuffle(itemList);
+        }
+
         public Map<Item, StackGroupSortInfo> getStackGroupsSortingInfo() {
             Map<Item, StackGroupSortInfo> stackGroupSortInfo = new HashMap<>();
-            itemList.sort(Comparator.comparing(item -> item.getName().asString()));
 
             int currentSlot = boundInfo.start;
             for (Item item : itemList) {
@@ -159,7 +163,7 @@ public class ITScreenControllerTest {
 
     }
 
-    public void testSort(InventoryContainerBoundInfo boundInfo) {
+    public void testSort(ScreenInventory boundInfo) {
         StacksSorter stacksSorter = new StacksSorter(boundInfo);
 
         for (int slot = boundInfo.start; slot <= boundInfo.end; slot++) {
@@ -168,6 +172,7 @@ public class ITScreenControllerTest {
             stacksSorter.addStack(slotStack.copy());
         }
 
+        stacksSorter.sort();
         Map<Item, StacksSorter.StackGroupSortInfo> stackGroupsInfo = stacksSorter.getStackGroupsSortingInfo();
         boolean[] slotIsSorted = new boolean[boundInfo.end + 1];
 

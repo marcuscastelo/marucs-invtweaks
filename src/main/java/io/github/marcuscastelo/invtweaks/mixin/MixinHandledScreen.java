@@ -1,29 +1,25 @@
 package io.github.marcuscastelo.invtweaks.mixin;
 
+import io.github.marcuscastelo.invtweaks.InvTweaksHandledScreen;
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationType;
-import io.github.marcuscastelo.invtweaks.InventoryContainerBoundInfo;
-import io.github.marcuscastelo.invtweaks.api.ScreenInfo;
+import io.github.marcuscastelo.invtweaks.inventory.ScreenInventories;
+import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
+import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
 import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry;
 import io.github.marcuscastelo.invtweaks.tests.ITScreenControllerTest;
-import io.github.marcuscastelo.invtweaks.util.ITScreenController;
-import net.minecraft.block.*;
+import io.github.marcuscastelo.invtweaks.util.InvTweaksScreenController;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.entity.mob.GhastEntity;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.LiteralText;
-import net.minecraft.world.World;
-import org.apache.commons.logging.Log;
-import org.apache.logging.log4j.Logger;
+import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -33,22 +29,16 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(HandledScreen.class)
-public abstract class MixinHandledScreen<T extends ScreenHandler> {
+public abstract class MixinHandledScreen<T extends ScreenHandler> implements InvTweaksHandledScreen {
     @Shadow @Final protected T handler;
 
     @Shadow @Final protected PlayerInventory playerInventory;
 
-    void deleteme_test(InventoryContainerBoundInfo bi) {
-        try {
-            bi.screenHandler.slots.get(bi.start).setStack(new ItemStack(Blocks.GRASS));
-            bi.screenHandler.slots.get(bi.end).setStack(new ItemStack(Blocks.END_STONE));
-            for (int i = bi.start+1; i < bi.end; i++) {
-                bi.screenHandler.slots.get(i).setStack(new ItemStack(Blocks.BEDROCK, i));
-            }
-        } catch (Exception e) {
-            assert MinecraftClient.getInstance().player != null;
-            MinecraftClient.getInstance().player.sendMessage(new LiteralText(e.getMessage()), false);
-        }
+    protected InvTweaksScreenController controller;
+
+    @Inject(method = "<init>", at = @At("TAIL"))
+    private void constructor(T handler, PlayerInventory inventory, Text title, CallbackInfo ci) {
+        controller = new InvTweaksScreenController(handler);
     }
 
     @Inject(method = "onMouseClick", at = @At("HEAD"), cancellable = true)
@@ -63,25 +53,16 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> {
         //In case of clicking outside of inventory, just ignore
         if (slot == null) return;
 
-        ScreenInfo screenInfo = InvTweaksBehaviorRegistry.getScreenInfo(handler.getClass());
-
-        int totalSize = handler.slots.size();
-        int playerInvSize = screenInfo.getPlayerMainInvSize();
-        int playerHotbarSize = screenInfo.getPlayerHotbarSize();
-        int containerInvSize = totalSize - screenInfo.getPlayerInvTotalSize();
-
-        InventoryContainerBoundInfo containerBoundInfo = new InventoryContainerBoundInfo(handler, 0, containerInvSize-1);
-        InventoryContainerBoundInfo playerMainBoundInfo = new InventoryContainerBoundInfo(handler, containerInvSize, containerInvSize+playerInvSize-1);
-        InventoryContainerBoundInfo hotbarBoundInfo = new InventoryContainerBoundInfo(handler, containerInvSize+playerInvSize, containerInvSize+playerInvSize+playerHotbarSize-1);
-        InventoryContainerBoundInfo playerFullBoundInfo = new InventoryContainerBoundInfo(handler, containerInvSize, containerInvSize+playerInvSize+playerHotbarSize-1);
+        ScreenSpecification screenSpecification = InvTweaksBehaviorRegistry.getScreenInfo(handler.getClass());
+        ScreenInventories screenInventories = new ScreenInventories(handler);
 
         InvTweaksOperationInfo operationInfo;
 
-        InventoryContainerBoundInfo clickedInventoryBoundInfo;
-        InventoryContainerBoundInfo otherInventoryBoundInfo;
+        ScreenInventory clickedInventoryBoundInfo;
+        ScreenInventory otherInventoryBoundInfo;
 
         boolean clickedInventoryIsPlayer;
-        //Depending on the index of the cliked slot, determine the clicked inventory
+        //Depending on the index of the clicked slot, determine the clicked inventory
         if (slot.id < containerInvSize) {
             clickedInventoryBoundInfo = containerBoundInfo;
             otherInventoryBoundInfo = playerMainBoundInfo;
@@ -106,19 +87,15 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> {
         else if (button == 0) {
             if (InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_Z) &&
                     InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_X)) {
-                deleteme_test(playerFullBoundInfo);                return;
 
             }
             else if (InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_Z)) {
-                deleteme_test(hotbarBoundInfo);                return;
 
             }
             else if (InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_X)) {
-                deleteme_test(playerMainBoundInfo);                return;
 
             }
             else if (InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_C)) {
-                deleteme_test(containerBoundInfo);
                 return;
             }
 
@@ -127,6 +104,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> {
                 if (Screen.hasAltDown()) operationInfo = new InvTweaksOperationInfo(InvTweaksOperationType.DROP_ALL, slot, clickedInventoryBoundInfo, otherInventoryBoundInfo);
                 else operationInfo = new InvTweaksOperationInfo(InvTweaksOperationType.MOVE_ALL, slot, clickedInventoryBoundInfo, otherInventoryBoundInfo);
             }
+
             //"AllSameType" operations
             else if (Screen.hasControlDown() && Screen.hasShiftDown() && Screen.hasAltDown()) {
                 if (clickedInventoryIsPlayer) operationInfo = new InvTweaksOperationInfo(InvTweaksOperationType.DROP_ALL_SAME_TYPE, slot, playerFullBoundInfo);
@@ -149,10 +127,8 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> {
 
         } else return;
 
-        ITScreenController controller = new ITScreenController(handler);
-
         try {
-            ITScreenControllerTest test = new ITScreenControllerTest(controller, screenInfo);
+            ITScreenControllerTest test = new ITScreenControllerTest(controller, screenSpecification);
             test.testSort(clickedInventoryBoundInfo);
             //InvTweaksBehaviorRegistry.executeOperation(handler.getClass(), operationInfo);
         } catch (IllegalArgumentException e) {
