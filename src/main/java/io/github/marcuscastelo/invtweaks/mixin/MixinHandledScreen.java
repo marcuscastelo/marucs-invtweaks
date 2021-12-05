@@ -19,6 +19,8 @@ import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
+import net.minecraft.util.Util;
 import net.minecraft.world.World;
 import org.apache.commons.logging.Log;
 import org.apache.logging.log4j.Logger;
@@ -29,16 +31,23 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(HandledScreen.class)
-public abstract class MixinHandledScreen<T extends ScreenHandler> {
-    @Shadow @Final protected T handler;
+public abstract class MixinHandledScreen<T extends ScreenHandler>{
+    @Shadow
+    @Final
+    protected T handler;
+
+    @Shadow public abstract boolean mouseClicked(double mouseX, double mouseY, int button);
+
+    private boolean hack__middle_click = false;
 
     void deleteme_test(InventoryContainerBoundInfo bi) {
         try {
             bi.screenHandler.slots.get(bi.start).setStack(new ItemStack(Blocks.GRASS));
             bi.screenHandler.slots.get(bi.end).setStack(new ItemStack(Blocks.END_STONE));
-            for (int i = bi.start+1; i < bi.end; i++) {
+            for (int i = bi.start + 1; i < bi.end; i++) {
                 bi.screenHandler.slots.get(i).setStack(new ItemStack(Blocks.BEDROCK, i));
             }
         } catch (Exception e) {
@@ -47,8 +56,38 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> {
         }
     }
 
+    @Inject(method = "mouseClicked", at=@At("HEAD"), cancellable = true)
+    protected void mouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir)
+    {
+        boolean isBtnPickItem = MinecraftClient.getInstance().options.keyPickItem.matchesMouse(button);
+        boolean isClientCreative = MinecraftClient.getInstance().interactionManager.hasCreativeInventory();
+        boolean isCreativeCloneOperation = isBtnPickItem && isClientCreative;
+
+        if (isCreativeCloneOperation) return; //Unchanged clone item in creative mode
+
+        if (button != 2) return; //Unchanged: onMouseClick function below already works
+
+        //Here button == 2, and we are not cloning.
+
+        hack__middle_click = true;
+
+        //Simulates left click
+        boolean returnValue;
+        returnValue = this.mouseClicked(mouseX, mouseY, 0);
+
+        hack__middle_click = false;
+
+        cir.setReturnValue(returnValue);
+        cir.cancel();
+    }
+
     @Inject(method = "onMouseClick(Lnet/minecraft/screen/slot/Slot;IILnet/minecraft/screen/slot/SlotActionType;)V", at = @At("HEAD"), cancellable = true)
-    protected void onMouseClicked(Slot slot, int invSlot, int button, SlotActionType actionType, CallbackInfo ci) {
+    protected void onMouseClick(Slot slot, int invSlot, int button, SlotActionType actionType, CallbackInfo ci) {
+        if (hack__middle_click) {
+            button = 2;
+            actionType = SlotActionType.CLONE;
+        }
+
         if (actionType == SlotActionType.PICKUP_ALL) return;
         if (!InvTweaksBehaviorRegistry.isScreenSupported(handler.getClass())) {
             if (MinecraftClient.getInstance().player != null)
@@ -77,7 +116,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> {
         InventoryContainerBoundInfo otherInventoryBoundInfo;
 
         boolean clickedInventoryIsPlayer;
-        //Depending on the index of the cliked slot, determine the clicked inventory
+        //Depending on the index of the clicked slot, determine the clicked inventory
         if (slot.id < containerInvSize) {
             clickedInventoryBoundInfo = containerBoundInfo;
             otherInventoryBoundInfo = playerMainBoundInfo;

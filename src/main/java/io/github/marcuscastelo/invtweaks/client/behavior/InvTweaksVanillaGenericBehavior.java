@@ -120,6 +120,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
 
     @Override
     public void sort(InvTweaksOperationInfo operationInfo) {
+        System.out.println("SORT IS BEING CALLED !! :)");
         ScreenHandler handler = operationInfo.clickedInventoryBoundInfo.screenHandler;
         int startSlot = operationInfo.clickedInventoryBoundInfo.start;
         int endSlot = operationInfo.clickedInventoryBoundInfo.end;
