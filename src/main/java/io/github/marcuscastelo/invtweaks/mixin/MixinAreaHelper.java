@@ -14,9 +14,4 @@ public class MixinAreaHelper {
 
     @Shadow private int width;
 
-    @Inject(method = "method_30492", at = @At("RETURN"), cancellable = true)
-    void method_30492(BlockPos blockPos, CallbackInfoReturnable<BlockPos> cir) {
-        System.out.println(cir.getReturnValue());
-        System.out.println(this.width);
-    }
 }

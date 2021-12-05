@@ -34,8 +34,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MixinHandledScreen<T extends ScreenHandler> {
     @Shadow @Final protected T handler;
 
-    @Shadow @Final protected PlayerInventory playerInventory;
-
     void deleteme_test(InventoryContainerBoundInfo bi) {
         try {
             bi.screenHandler.slots.get(bi.start).setStack(new ItemStack(Blocks.GRASS));
@@ -49,7 +47,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> {
         }
     }
 
-    @Inject(method = "onMouseClick", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "onMouseClick(Lnet/minecraft/screen/slot/Slot;IILnet/minecraft/screen/slot/SlotActionType;)V", at = @At("HEAD"), cancellable = true)
     protected void onMouseClicked(Slot slot, int invSlot, int button, SlotActionType actionType, CallbackInfo ci) {
         if (actionType == SlotActionType.PICKUP_ALL) return;
         if (!InvTweaksBehaviorRegistry.isScreenSupported(handler.getClass())) {
@@ -96,7 +94,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> {
 
         if (actionType == SlotActionType.CLONE && button == 2) { //Sorting functionality
             //Allow clone operation in creative mode
-            if (slot.getStack().getItem() != Items.AIR && playerInventory.player.abilities.creativeMode) return;
+            if (slot.getStack().getItem() != Items.AIR && MinecraftClient.getInstance().player.isCreative()) return;
 
             operationInfo = new InvTweaksOperationInfo(InvTweaksOperationType.SORT, slot, clickedInventoryBoundInfo);
         }

@@ -35,7 +35,8 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
         }
 
         //Item in hand
-        ItemStack currentHeldStack = interactionManager.clickSlot(handler.syncId, from, 0, SlotActionType.PICKUP, player);
+        interactionManager.clickSlot(handler.syncId, from, 0, SlotActionType.PICKUP, player);
+        ItemStack currentHeldStack = handler.getCursorStack();
 
         int remainingTotalClicks = quantity;
         int candidateDestination = toSlotId;
@@ -69,15 +70,17 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
 
                     if (dumpWrongStackSlot > maxSlot) { //If there's no more room
                         //Returns remaining
-                        currentHeldStack = interactionManager.clickSlot(handler.syncId, from, 0, SlotActionType.PICKUP, player);
+                        interactionManager.clickSlot(handler.syncId, from, 0, SlotActionType.PICKUP, player);
+                        currentHeldStack = handler.getCursorStack();
                         return -3;
                     }
 
                     //Swap right and wrong
-                    currentHeldStack = interactionManager.clickSlot(handler.syncId, candidateDestination, 0, SlotActionType.PICKUP, player);
-
+                    interactionManager.clickSlot(handler.syncId, candidateDestination, 0, SlotActionType.PICKUP, player);
+                    currentHeldStack = handler.getCursorStack();
                     //Dump wrong
-                    currentHeldStack = interactionManager.clickSlot(handler.syncId, dumpWrongStackSlot, 0, SlotActionType.PICKUP, player);
+                    interactionManager.clickSlot(handler.syncId, dumpWrongStackSlot, 0, SlotActionType.PICKUP, player);
+                    currentHeldStack = handler.getCursorStack();
 
                     return candidateDestination;
                 }
@@ -89,10 +92,14 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
             int clicksToCompleteStack = candidateDstStack.getMaxCount() - candidateDstStack.getCount();
             int rightClicks = MathHelper.clamp(remainingTotalClicks, 0, clicksToCompleteStack);
 
-            if (rightClicks > 0 && remainingTotalClicks >= clicksToCompleteStack)
-                currentHeldStack = interactionManager.clickSlot(handler.syncId, candidateDestination, 0, SlotActionType.PICKUP, player);
-            else for (int i = 0; i < rightClicks; i++)
-                currentHeldStack = interactionManager.clickSlot(handler.syncId, candidateDestination, 1, SlotActionType.PICKUP, player);
+            if (rightClicks > 0 && remainingTotalClicks >= clicksToCompleteStack) {
+                interactionManager.clickSlot(handler.syncId, candidateDestination, 0, SlotActionType.PICKUP, player);
+                currentHeldStack = handler.getCursorStack();
+            }
+            else for (int i = 0; i < rightClicks; i++) {
+                interactionManager.clickSlot(handler.syncId, candidateDestination, 1, SlotActionType.PICKUP, player);
+                currentHeldStack = handler.getCursorStack();
+            }
 
             remainingTotalClicks -= rightClicks;
         }
