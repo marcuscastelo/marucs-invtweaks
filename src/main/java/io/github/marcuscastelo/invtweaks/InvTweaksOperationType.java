@@ -20,6 +20,7 @@ public enum InvTweaksOperationType {
             case MOVE_ONE:
                 return behavior::moveOne;
             case MOVE_STACK:
+                return null;
             case DROP_ALL_SAME_TYPE:
                 return behavior::dropAllSameType;
             case MOVE_ALL_SAME_TYPE:

@@ -1,7 +1,7 @@
 package io.github.marcuscastelo.invtweaks.client.behavior;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
-import io.github.marcuscastelo.invtweaks.InventoryContainerBoundInfo;
+import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
@@ -15,11 +15,8 @@ import net.minecraft.util.math.MathHelper;
 import java.util.*;
 
 public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
-    public static InvTweaksVanillaGenericBehavior INSTANCE = new InvTweaksVanillaGenericBehavior();
-
     protected int moveToSlot(ScreenHandler handler, int maxSlot, int fromSlotId, int toSlotId, int quantity, boolean sorting) {
-        int from = fromSlotId;
-        ItemStack initialStack = handler.getSlot(from).getStack().copy();
+        ItemStack initialStack = handler.getSlot(fromSlotId).getStack().copy();
         int initialCount = initialStack.getCount();
         if (quantity > initialCount) {
             System.out.println("Trying to move more than we have InvTweaksVanillaBehavior@moveToSlot");
@@ -35,7 +32,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
         }
 
         //Item in hand
-        interactionManager.clickSlot(handler.syncId, from, 0, SlotActionType.PICKUP, player);
+        interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player);
         ItemStack currentHeldStack = handler.getCursorStack();
 
         int remainingTotalClicks = quantity;
@@ -70,7 +67,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
 
                     if (dumpWrongStackSlot > maxSlot) { //If there's no more room
                         //Returns remaining
-                        interactionManager.clickSlot(handler.syncId, from, 0, SlotActionType.PICKUP, player);
+                        interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player);
                         currentHeldStack = handler.getCursorStack();
                         return -3;
                     }
@@ -78,6 +75,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
                     //Swap right and wrong
                     interactionManager.clickSlot(handler.syncId, candidateDestination, 0, SlotActionType.PICKUP, player);
                     currentHeldStack = handler.getCursorStack();
+
                     //Dump wrong
                     interactionManager.clickSlot(handler.syncId, dumpWrongStackSlot, 0, SlotActionType.PICKUP, player);
                     currentHeldStack = handler.getCursorStack();
@@ -106,13 +104,13 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
 
         //Place remaining back
         if (initialCount - quantity > 0)
-            interactionManager.clickSlot(handler.syncId, from, 0, SlotActionType.PICKUP, player);
+            interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player);
 
         if (candidateDestination > toSlotId) candidateDestination--;
         return candidateDestination;
     }
 
-    protected int moveToInventory(ScreenHandler handler, int fromSlot, InventoryContainerBoundInfo destinationBoundInfo, int quantity, boolean sorting) {
+    protected int moveToInventory(ScreenHandler handler, int fromSlot, ScreenInventory destinationBoundInfo, int quantity, boolean sorting) {
         int destinationStart = destinationBoundInfo.start;
         int inventorySize = destinationBoundInfo.getSize();
         return moveToSlot(handler, destinationStart+inventorySize-1, fromSlot, destinationStart, quantity, sorting);
@@ -120,7 +118,6 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
 
     @Override
     public void sort(InvTweaksOperationInfo operationInfo) {
-        System.out.println("SORT IS BEING CALLED !! :)");
         ScreenHandler handler = operationInfo.clickedInventoryBoundInfo.screenHandler;
         int startSlot = operationInfo.clickedInventoryBoundInfo.start;
         int endSlot = operationInfo.clickedInventoryBoundInfo.end;

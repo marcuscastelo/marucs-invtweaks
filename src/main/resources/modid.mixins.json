@@ -4,11 +4,9 @@
   "package": "io.github.marcuscastelo.invtweaks.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "MixinAreaHelper"
   ],
   "client": [
     "MixinHandledScreen",
-    "MixinInventoryScreen",
     "MixinMerchantScreenHandler"
   ],
   "injectors": {

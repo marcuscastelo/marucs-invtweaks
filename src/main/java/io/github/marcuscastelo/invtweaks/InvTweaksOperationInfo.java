@@ -1,5 +1,6 @@
 package io.github.marcuscastelo.invtweaks;
 
+import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import net.minecraft.screen.slot.Slot;
 
 public class InvTweaksOperationInfo {
@@ -7,18 +8,18 @@ public class InvTweaksOperationInfo {
 
     public final Slot clickedSlot;
 
-    public final InventoryContainerBoundInfo clickedInventoryBoundInfo;
+    public final ScreenInventory clickedInventoryBoundInfo;
 
-    public final InventoryContainerBoundInfo otherInventoryBoundInfo;
+    public final ScreenInventory otherInventoryBoundInfo;
 
-    public InvTweaksOperationInfo(InvTweaksOperationType type, Slot clickedSlot, InventoryContainerBoundInfo clickedInventoryBoundInfo, InventoryContainerBoundInfo otherInventoryBoundInfo) {
+    public InvTweaksOperationInfo(InvTweaksOperationType type, Slot clickedSlot, ScreenInventory clickedInventoryBoundInfo, ScreenInventory otherInventoryBoundInfo) {
         this.type = type;
         this.clickedSlot = clickedSlot;
         this.clickedInventoryBoundInfo = clickedInventoryBoundInfo;
         this.otherInventoryBoundInfo = otherInventoryBoundInfo;
     }
 
-    public InvTweaksOperationInfo(InvTweaksOperationType type, Slot clickedSlot, InventoryContainerBoundInfo clickedInventory) {
+    public InvTweaksOperationInfo(InvTweaksOperationType type, Slot clickedSlot, ScreenInventory clickedInventory) {
         this(type, clickedSlot, clickedInventory, null);
     }
 }

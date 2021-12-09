@@ -1,23 +1,25 @@
 package io.github.marcuscastelo.invtweaks.registry;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
-import io.github.marcuscastelo.invtweaks.api.ScreenInfo;
+import io.github.marcuscastelo.invtweaks.api.ScreenInventoriesSpecification;
+import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
 import io.github.marcuscastelo.invtweaks.client.behavior.InvTweaksVanillaGenericBehavior;
 import io.github.marcuscastelo.invtweaks.client.behavior.InvTweaksVanillaMerchantBehavior;
+import io.github.marcuscastelo.invtweaks.client.behavior.InvTweaksVanillaPlayerBehaviour;
 import net.minecraft.screen.*;
 
 import java.util.HashMap;
 
 public class InvTweaksBehaviorRegistry {
-    public static HashMap<Class<? extends ScreenHandler>, ScreenInfo> screenBehaviorMap = new HashMap<>();
+    public static HashMap<Class<? extends ScreenHandler>, ScreenSpecification> screenBehaviorMap = new HashMap<>();
 
-    public static ScreenInfo register(ScreenInfo screenInfo) {
-        if (screenBehaviorMap.containsKey(screenInfo.getHandlerClass())) throw new IllegalArgumentException("Screen " + screenInfo.getHandlerClass() + " is already registered");
-        screenBehaviorMap.put(screenInfo.getHandlerClass(), screenInfo);
-        return screenInfo;
+    public static ScreenSpecification register(ScreenSpecification screenSpecification) {
+        if (screenBehaviorMap.containsKey(screenSpecification.getHandlerClass())) throw new IllegalArgumentException("Screen " + screenSpecification.getHandlerClass() + " is already registered");
+        screenBehaviorMap.put(screenSpecification.getHandlerClass(), screenSpecification);
+        return screenSpecification;
     }
 
-    public static ScreenInfo getScreenInfo(Class<? extends ScreenHandler> screenHandlerClass) {
+    public static ScreenSpecification getScreenSpecs(Class<? extends ScreenHandler> screenHandlerClass) {
         if (!isScreenSupported(screenHandlerClass)) throw new IllegalArgumentException("Screen " + screenHandlerClass + " is not supported");
         return screenBehaviorMap.get(screenHandlerClass);
     }
@@ -31,15 +33,15 @@ public class InvTweaksBehaviorRegistry {
         return screenBehaviorMap.containsKey(screenHandlerClass);
     }
 
-    public static ScreenInfo.Builder createScreenInfoBuilder(Class<? extends ScreenHandler> handlerClass) {
-        return new ScreenInfo.Builder(handlerClass);
+    public static ScreenSpecification.Builder createScreenInfoBuilder(Class<? extends ScreenHandler> handlerClass) {
+        return new ScreenSpecification.Builder(handlerClass);
     }
 
-    public static ScreenInfo.Builder createVanillaGenericScreenInfoBuilder(Class<? extends ScreenHandler> handlerClass) {
-        return createScreenInfoBuilder(handlerClass).setBehavior(InvTweaksVanillaGenericBehavior.INSTANCE);
+    public static ScreenSpecification.Builder createVanillaGenericScreenInfoBuilder(Class<? extends ScreenHandler> handlerClass) {
+        return createScreenInfoBuilder(handlerClass).withBehavior(new InvTweaksVanillaGenericBehavior());
     }
 
-    public static ScreenInfo buildDefaultedVanillaGenericScreenInfo(Class<? extends ScreenHandler> handlerClass) {
+    public static ScreenSpecification buildDefaultedVanillaGenericScreenInfo(Class<? extends ScreenHandler> handlerClass) {
         return createVanillaGenericScreenInfoBuilder(handlerClass).build();
     }
 
@@ -62,8 +64,9 @@ public class InvTweaksBehaviorRegistry {
         register(buildDefaultedVanillaGenericScreenInfo(GrindstoneScreenHandler.class));
         register(buildDefaultedVanillaGenericScreenInfo(HorseScreenHandler.class));
 
-        register(createVanillaGenericScreenInfoBuilder(PlayerScreenHandler.class).setPlayerInvTotalSize(37).build());
-        register(createScreenInfoBuilder(MerchantScreenHandler.class).setBehavior(InvTweaksVanillaMerchantBehavior.INSTANCE).build());
+        ScreenInventoriesSpecification playerScreenInvSpecs = new ScreenInventoriesSpecification(false, 27, 9);
+        register(createScreenInfoBuilder(PlayerScreenHandler.class).withBehavior(new InvTweaksVanillaPlayerBehaviour()).withInventoriesSpecification(playerScreenInvSpecs).build());
+        register(createScreenInfoBuilder(MerchantScreenHandler.class).withBehavior(new InvTweaksVanillaMerchantBehavior()).build());
     }
 
 }

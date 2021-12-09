@@ -3,27 +3,21 @@ package io.github.marcuscastelo.invtweaks.mixin;
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationType;
 import io.github.marcuscastelo.invtweaks.InventoryContainerBoundInfo;
-import io.github.marcuscastelo.invtweaks.api.ScreenInfo;
+import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
+import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry;
 import net.minecraft.block.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.entity.mob.GhastEntity;
-import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Util;
-import net.minecraft.world.World;
-import org.apache.commons.logging.Log;
-import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -43,12 +37,12 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
 
     private boolean hack__middle_click = false;
 
-    void deleteme_test(InventoryContainerBoundInfo bi) {
+    void deleteme_test(ScreenInventory si) {
         try {
-            bi.screenHandler.slots.get(bi.start).setStack(new ItemStack(Blocks.GRASS));
-            bi.screenHandler.slots.get(bi.end).setStack(new ItemStack(Blocks.END_STONE));
-            for (int i = bi.start + 1; i < bi.end; i++) {
-                bi.screenHandler.slots.get(i).setStack(new ItemStack(Blocks.BEDROCK, i));
+            si.screenHandler.slots.get(si.start).setStack(new ItemStack(Blocks.GRASS));
+            si.screenHandler.slots.get(si.end).setStack(new ItemStack(Blocks.END_STONE));
+            for (int i = si.start + 1; i < si.end; i++) {
+                si.screenHandler.slots.get(i).setStack(new ItemStack(Blocks.BEDROCK, i));
             }
         } catch (Exception e) {
             assert MinecraftClient.getInstance().player != null;
@@ -98,22 +92,41 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         //In case of clicking outside of inventory, just ignore
         if (slot == null) return;
 
-        ScreenInfo screenInfo = InvTweaksBehaviorRegistry.getScreenInfo(handler.getClass());
+        ScreenSpecification screenSpecs = InvTweaksBehaviorRegistry.getScreenSpecs(handler.getClass());
+
+        System.out.println("ScreenSpecs = " + screenSpecs.getHandlerClass().descriptorString() );
+
+
 
         int totalSize = handler.slots.size();
-        int playerInvSize = screenInfo.getPlayerMainInvSize();
-        int playerHotbarSize = screenInfo.getPlayerHotbarSize();
-        int containerInvSize = totalSize - screenInfo.getPlayerInvTotalSize();
+        int playerInvSize = screenSpecs.getInventoriesSpecification().playerMainInvSize;
+        int playerHotbarSize = screenSpecs.getInventoriesSpecification().playerHotbarSize;
+        int containerInvSize = totalSize - (playerInvSize + playerHotbarSize);
 
-        InventoryContainerBoundInfo containerBoundInfo = new InventoryContainerBoundInfo(handler, 0, containerInvSize-1);
-        InventoryContainerBoundInfo playerMainBoundInfo = new InventoryContainerBoundInfo(handler, containerInvSize, containerInvSize+playerInvSize-1);
-        InventoryContainerBoundInfo hotbarBoundInfo = new InventoryContainerBoundInfo(handler, containerInvSize+playerInvSize, containerInvSize+playerInvSize+playerHotbarSize-1);
-        InventoryContainerBoundInfo playerFullBoundInfo = new InventoryContainerBoundInfo(handler, containerInvSize, containerInvSize+playerInvSize+playerHotbarSize-1);
+        //TODO: make this generic instead of hardcoded:
+        if (handler.getClass().equals(PlayerScreenHandler.class)) {
+            containerInvSize = 9;
+        }
+
+        System.out.println("Total = " + totalSize );
+        System.out.println("PlayerInvSize = " + playerInvSize );
+        System.out.println("PlayerHotbarSize = " + playerHotbarSize );
+        System.out.println("ContainerInvSize = " + containerInvSize );
+        
+        ScreenInventory containerBoundInfo = new ScreenInventory(handler, 0, containerInvSize-1);
+        ScreenInventory playerMainBoundInfo = new ScreenInventory(handler, containerInvSize, containerInvSize+playerInvSize-1);
+        ScreenInventory hotbarBoundInfo = new ScreenInventory(handler, containerInvSize+playerInvSize, containerInvSize+playerInvSize+playerHotbarSize-1);
+        ScreenInventory playerFullBoundInfo = new ScreenInventory(handler, containerInvSize, containerInvSize+playerInvSize+playerHotbarSize-1);
 
         InvTweaksOperationInfo operationInfo;
 
-        InventoryContainerBoundInfo clickedInventoryBoundInfo;
-        InventoryContainerBoundInfo otherInventoryBoundInfo;
+        ScreenInventory clickedInventoryBoundInfo;
+        ScreenInventory otherInventoryBoundInfo;
+
+//        for (int i = playerMainBoundInfo.start; i <= playerMainBoundInfo.end; i++) {
+//            handler.slots.get(i).setStack(new ItemStack(Items.BEDROCK, i + 1));
+//        }
+//        if (1<2)return;
 
         boolean clickedInventoryIsPlayer;
         //Depending on the index of the clicked slot, determine the clicked inventory

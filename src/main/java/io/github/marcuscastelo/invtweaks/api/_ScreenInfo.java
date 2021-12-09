@@ -3,7 +3,7 @@ package io.github.marcuscastelo.invtweaks.api;
 import io.github.marcuscastelo.invtweaks.client.behavior.IInvTweaksBehavior;
 import net.minecraft.screen.ScreenHandler;
 
-public final class ScreenInfo {
+public final class _ScreenInfo {
     private static final int DEFAULT_PLAYER_MAIN_INV_SIZE = 27;
     private static final int DEFAULT_PLAYER_HOTBAR_SIZE = 9;
     private static final boolean DEFAULT_HAS_PLAYER_MAIN_INV = true;
@@ -54,7 +54,7 @@ public final class ScreenInfo {
     protected IInvTweaksBehavior invTweaksBehavior;
 
 
-    private ScreenInfo(Class<? extends ScreenHandler> handlerClass) {
+    private _ScreenInfo(Class<? extends ScreenHandler> handlerClass) {
         this.handlerClass = handlerClass;
         this.playerMainInvSize = DEFAULT_PLAYER_MAIN_INV_SIZE;
         this.playerHotbarSize = DEFAULT_PLAYER_HOTBAR_SIZE;
@@ -66,8 +66,8 @@ public final class ScreenInfo {
     }
 
     public static class Builder {
-        ScreenInfo si;
-        public Builder(Class<? extends ScreenHandler> screenHandlerClass) { si = new ScreenInfo(screenHandlerClass); }
+        _ScreenInfo si;
+        public Builder(Class<? extends ScreenHandler> screenHandlerClass) { si = new _ScreenInfo(screenHandlerClass); }
         public Builder withPlayerMainInv(boolean bl) { si.bhasPlayerMainInv = bl; return this; }
         public Builder withPlayerHotbar(boolean bl) { si.bhasPlayerHotbar = bl; return this; }
         public Builder withExternalContainer(boolean bl) { si.bhasExternalContainer = bl; return this; }
@@ -75,7 +75,7 @@ public final class ScreenInfo {
         public Builder setPlayerHotbarSize(int size) { si.playerHotbarSize = size; return this; }
         public Builder setPlayerInvTotalSize(int size) { si.playerInvTotalSize = size; return this; }
         public Builder setBehavior(IInvTweaksBehavior behavior) { si.invTweaksBehavior = behavior; return this; }
-        public ScreenInfo build() {
+        public _ScreenInfo build() {
             if (si.invTweaksBehavior == null) throw new IllegalStateException("Before building a ScreenInfo, please inform it's behavior");
             if (si.playerInvTotalSize == -1) si.playerInvTotalSize = si.playerMainInvSize + si.playerHotbarSize;
             return si;
