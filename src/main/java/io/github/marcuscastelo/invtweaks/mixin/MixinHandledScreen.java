@@ -15,6 +15,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.ScreenHandler;
+import net.minecraft.screen.slot.CraftingResultSlot;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.LiteralText;
@@ -116,6 +117,8 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         //We do not handle pickup all, so we can just call the original method
         if (!isSlotActionTypeSupported(actionType)) return;
 
+        if (slot instanceof CraftingResultSlot) return;
+
         if (!isScreenSupported()) {
             warnPlayer("This screen is not supported by Marucs' InvTweaks");
             return;
@@ -135,11 +138,6 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
             if (invSlot >= 5 && invSlot < 9) return;
         }
 
-        System.out.println("Total = " + totalSize );
-        System.out.println("PlayerInvSize = " + playerInvSize );
-        System.out.println("PlayerHotbarSize = " + playerHotbarSize );
-        System.out.println("ContainerInvSize = " + containerInvSize );
-        
         ScreenInventory containerSI = new ScreenInventory(handler, 0, containerInvSize-1);
         ScreenInventory playerMainSI = new ScreenInventory(handler, containerInvSize, containerInvSize+playerInvSize-1);
         ScreenInventory hotbarSI = new ScreenInventory(handler, containerInvSize+playerInvSize, containerInvSize+playerInvSize+playerHotbarSize-1);

@@ -15,6 +15,9 @@ import net.minecraft.util.math.MathHelper;
 import java.util.*;
 
 public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
+    public final int MOVERESULT_FULL = -3;
+
+
     protected int moveToSlot(ScreenHandler handler, int maxSlot, int fromSlotId, int toSlotId, int quantity, boolean sorting) {
         ItemStack initialStack = handler.getSlot(fromSlotId).getStack().copy();
         int initialCount = initialStack.getCount();
@@ -59,30 +62,31 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
                     remainingTotalClicks -= rightClicks;
                     continue;
                 }
+                else {
+                    //If slot is occuppied
+                    if (sorting) {
+                        int dumpWrongStackSlot = candidateDestination + 1;
+                        while (handler.slots.get(dumpWrongStackSlot).getStack().getItem() != Items.AIR && dumpWrongStackSlot <= maxSlot) dumpWrongStackSlot++;
 
-                //If slot is occuppied
-                if (sorting) {
-                    int dumpWrongStackSlot = candidateDestination + 1;
-                    while (handler.slots.get(dumpWrongStackSlot).getStack().getItem() != Items.AIR && dumpWrongStackSlot <= maxSlot) dumpWrongStackSlot++;
+                        if (dumpWrongStackSlot > maxSlot) { //If there's no more room
+                            //Returns remaining
+                            interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player);
+                            currentHeldStack = handler.getCursorStack();
+                            return MOVERESULT_FULL;
+                        }
 
-                    if (dumpWrongStackSlot > maxSlot) { //If there's no more room
-                        //Returns remaining
-                        interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player);
+                        //Swap right and wrong
+                        interactionManager.clickSlot(handler.syncId, candidateDestination, 0, SlotActionType.PICKUP, player);
                         currentHeldStack = handler.getCursorStack();
-                        return -3;
+
+                        //Dump wrong
+                        interactionManager.clickSlot(handler.syncId, dumpWrongStackSlot, 0, SlotActionType.PICKUP, player);
+                        currentHeldStack = handler.getCursorStack();
+
+                        return candidateDestination;
                     }
-
-                    //Swap right and wrong
-                    interactionManager.clickSlot(handler.syncId, candidateDestination, 0, SlotActionType.PICKUP, player);
-                    currentHeldStack = handler.getCursorStack();
-
-                    //Dump wrong
-                    interactionManager.clickSlot(handler.syncId, dumpWrongStackSlot, 0, SlotActionType.PICKUP, player);
-                    currentHeldStack = handler.getCursorStack();
-
-                    return candidateDestination;
+                    else continue;
                 }
-                else continue;
             }
 
             //If same type:
@@ -102,38 +106,16 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
             remainingTotalClicks -= rightClicks;
         }
 
-        //Place remaining back
-        if (initialCount - quantity > 0)
+        if (remainingTotalClicks > 0)
             interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player);
+
 
         if (candidateDestination > toSlotId) candidateDestination--;
         return candidateDestination;
     }
 
-    //TODO: move to helper class
-    private boolean hasEmptySlots(ScreenHandler handler, ScreenInventory destinationBoundInfo) {
-        int destinationStart = destinationBoundInfo.start;
-        int destinationEnd = destinationBoundInfo.end;
-
-        int firstEmptySlot = Integer.MAX_VALUE;
-        for (int i = destinationStart; i <= destinationEnd; i++) {
-            if (!handler.slots.get(i).hasStack()) {
-
-                System.out.println("Found empty slot: " + i);
-                System.out.println("Item: " + handler.slots.get(i).getStack().getItem());
-
-                firstEmptySlot = i;
-                break;
-            }
-        }
-
-        return firstEmptySlot <= destinationEnd;
-    }
-
     protected int moveToInventory(ScreenHandler handler, int fromSlot, ScreenInventory destinationBoundInfo, int quantity, boolean sorting) {
         int destinationStart = destinationBoundInfo.start;
-
-        if (!hasEmptySlots(handler, destinationBoundInfo)) return -1;
 
         int inventorySize = destinationBoundInfo.getSize();
         return moveToSlot(handler, destinationStart+inventorySize-1, fromSlot, destinationStart, quantity, sorting);
@@ -184,7 +166,8 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
         for (int slotId = operationInfo.clickedInventoryBoundInfo.start; slotId <= operationInfo.clickedInventoryBoundInfo.end; slotId++) {
             ItemStack stack = operationInfo.clickedInventoryBoundInfo.screenHandler.getSlot(slotId).getStack();
             if (stack.getItem() == Items.AIR) continue;
-            moveToInventory(operationInfo.clickedInventoryBoundInfo.screenHandler, slotId, operationInfo.otherInventoryBoundInfo, stack.getCount(), false);
+            int result = moveToInventory(operationInfo.clickedInventoryBoundInfo.screenHandler, slotId, operationInfo.otherInventoryBoundInfo, stack.getCount(), false);
+            if (result == MOVERESULT_FULL) break;
         }
     }
 
@@ -203,12 +186,8 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
             ItemStack stack = operationInfo.clickedInventoryBoundInfo.screenHandler.slots.get(slot).getStack();
             if (stack.getItem() != itemType) continue;
 
-            int placedAt = moveToInventory(operationInfo.clickedInventoryBoundInfo.screenHandler, slot, operationInfo.otherInventoryBoundInfo, stack.getCount(), false);
-//            if (placedAt+1 > container.slots.size()) {
-            //If destination inventory is full
-//                MinecraftClient.getInstance().interactionManager.clickSlot(container.syncId,slot,0,SlotActionType.PICKUP,MinecraftClient.getInstance().player);
-//                return;
-//            }
+            int result = moveToInventory(operationInfo.clickedInventoryBoundInfo.screenHandler, slot, operationInfo.otherInventoryBoundInfo, stack.getCount(), false);
+            if (result == MOVERESULT_FULL) break;
         }
     }
 
@@ -227,7 +206,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
     public void moveOne(InvTweaksOperationInfo operationInfo) {
         ScreenHandler handler = operationInfo.clickedInventoryBoundInfo.screenHandler;
         int from = operationInfo.clickedSlot.id;
-        moveToInventory(handler,from, operationInfo.otherInventoryBoundInfo, 1, false);
+        int result = moveToInventory(handler,from, operationInfo.otherInventoryBoundInfo, 1, false);
     }
 
     @Override
