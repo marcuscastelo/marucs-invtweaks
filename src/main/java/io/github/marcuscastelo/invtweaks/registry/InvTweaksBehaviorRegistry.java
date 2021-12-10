@@ -1,14 +1,17 @@
 package io.github.marcuscastelo.invtweaks.registry;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
+import io.github.marcuscastelo.invtweaks.OperationExecutor;
 import io.github.marcuscastelo.invtweaks.api.ScreenInventoriesSpecification;
 import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
+import io.github.marcuscastelo.invtweaks.client.behavior.IInvTweaksBehavior;
 import io.github.marcuscastelo.invtweaks.client.behavior.InvTweaksVanillaGenericBehavior;
 import io.github.marcuscastelo.invtweaks.client.behavior.InvTweaksVanillaMerchantBehavior;
 import io.github.marcuscastelo.invtweaks.client.behavior.InvTweaksVanillaPlayerBehaviour;
 import net.minecraft.screen.*;
 
 import java.util.HashMap;
+import java.util.Optional;
 
 public class InvTweaksBehaviorRegistry {
     public static HashMap<Class<? extends ScreenHandler>, ScreenSpecification> screenBehaviorMap = new HashMap<>();
@@ -25,8 +28,16 @@ public class InvTweaksBehaviorRegistry {
     }
 
     public static void executeOperation(Class<? extends ScreenHandler> screenHandlerClass, InvTweaksOperationInfo operationInfo) throws IllegalArgumentException{
-        if (!isScreenSupported(screenHandlerClass)) throw new IllegalArgumentException("Screen "  + screenHandlerClass + " doesn't have a behavior");
-        operationInfo.type.asOperationExecutor(screenBehaviorMap.get(screenHandlerClass).getInvTweaksBehavior()).execute(operationInfo);
+        if (!isScreenSupported(screenHandlerClass))
+            throw new IllegalArgumentException("Screen "  + screenHandlerClass + " doesn't have a behavior");
+
+        IInvTweaksBehavior behavior = screenBehaviorMap.get(screenHandlerClass).getInvTweaksBehavior();
+        Optional<OperationExecutor> executor = operationInfo.type.asOperationExecutor(behavior);
+        if (executor.isPresent()) {
+            executor.get().execute(operationInfo);
+        } else {
+            System.out.println("Operation " + operationInfo.type + " is not supported by " + behavior.getClass());
+        }
     }
 
     public static boolean isScreenSupported(Class<? extends ScreenHandler> screenHandlerClass) {

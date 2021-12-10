@@ -10,5 +10,6 @@ public interface IInvTweaksBehavior {
     void dropAllSameType(InvTweaksOperationInfo operationInfo);
     void moveOne(InvTweaksOperationInfo operationInfo);
     void dropOne(InvTweaksOperationInfo operationInfo);
+    void moveStack(InvTweaksOperationInfo operationInfo);
     void dropStack(InvTweaksOperationInfo operationInfo);
 }

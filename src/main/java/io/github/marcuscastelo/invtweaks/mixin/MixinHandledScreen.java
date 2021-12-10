@@ -2,7 +2,6 @@ package io.github.marcuscastelo.invtweaks.mixin;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationType;
-import io.github.marcuscastelo.invtweaks.InventoryContainerBoundInfo;
 import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry;
@@ -10,6 +9,7 @@ import net.minecraft.block.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -29,13 +29,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(HandledScreen.class)
 public abstract class MixinHandledScreen<T extends ScreenHandler>{
+    private final int MIDDLE_CLICK = GLFW.GLFW_MOUSE_BUTTON_MIDDLE;
+
     @Shadow
     @Final
     protected T handler;
 
     @Shadow public abstract boolean mouseClicked(double mouseX, double mouseY, int button);
 
-    private boolean hack__middle_click = false;
+    private boolean _middleClickBypass = false;
+    private boolean isBypassActive() { return _middleClickBypass; }
 
     void deleteme_test(ScreenInventory si) {
         try {
@@ -50,53 +53,90 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         }
     }
 
-    @Inject(method = "mouseClicked", at=@At("HEAD"), cancellable = true)
-    protected void mouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir)
-    {
-        boolean isBtnPickItem = MinecraftClient.getInstance().options.keyPickItem.matchesMouse(button);
-        boolean isClientCreative = MinecraftClient.getInstance().interactionManager.hasCreativeInventory();
-        boolean isCreativeCloneOperation = isBtnPickItem && isClientCreative;
+    private boolean isTryingToCloneItem(int button) {
+        boolean isCloneBtn = MinecraftClient.getInstance().options.keyPickItem.matchesMouse(button);
+        boolean isInCreative = MinecraftClient.getInstance().interactionManager.hasCreativeInventory();
 
-        if (isCreativeCloneOperation) return; //Unchanged clone item in creative mode
+        return isCloneBtn && isInCreative;
+    }
 
-        if (button != 2) return; //Unchanged: onMouseClick function below already works
+    private void runMiddleClickAsLeftClick(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+        //Informs this class that the middle click is going to be handled
+        _middleClickBypass = true;
 
-        //Here button == 2, and we are not cloning.
-
-        hack__middle_click = true;
-
-        //Simulates left click
+        //Simulates left click (which will be treated as middle click by us because of the hack)
         boolean returnValue;
         returnValue = this.mouseClicked(mouseX, mouseY, 0);
 
-        hack__middle_click = false;
+        //Informs this class that the middle click was successfully handled
+        _middleClickBypass = false;
 
-        cir.setReturnValue(returnValue);
+        //Do not execute the original code for the initial click
         cir.cancel();
+        cir.setReturnValue(returnValue);
     }
 
+    /**
+     * Minecraft's original code filters out middle clicks, but we want to handle them.
+     * This method bypasses the filter.
+     */
+    private void bypassMiddleClickBarrier(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+
+        //Do not handle middle click if the player is trying to clone an item
+        if (isTryingToCloneItem(button)) return;
+
+        //Other buttons that are not a middle click are handled by the original method
+        if (button != MIDDLE_CLICK) return;
+
+        //Here, we handle the middle click
+        runMiddleClickAsLeftClick(mouseX, mouseY, button, cir);
+    }
+
+    @Inject(method = "mouseClicked", at=@At("HEAD"), cancellable = true)
+    protected void mouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir)
+    {
+        //mouseClicked is called before onMouseClick
+        //we use this to bypass the middle click filter
+        bypassMiddleClickBarrier(mouseX, mouseY, button, cir);
+    }
+
+    private boolean isSlotActionTypeSupported(SlotActionType type) {
+        return type != SlotActionType.PICKUP_ALL;
+    }
+
+    private boolean isScreenSupported() {
+        return InvTweaksBehaviorRegistry.isScreenSupported(this.handler.getClass());
+    }
+
+    private void warnPlayer(String message) {
+        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        player.sendMessage(new LiteralText(message), false);
+    }
+
+
     @Inject(method = "onMouseClick(Lnet/minecraft/screen/slot/Slot;IILnet/minecraft/screen/slot/SlotActionType;)V", at = @At("HEAD"), cancellable = true)
-    protected void onMouseClick(Slot slot, int invSlot, int button, SlotActionType actionType, CallbackInfo ci) {
-        if (hack__middle_click) {
-            button = 2;
+    protected void onMouseClick(Slot slot, int invSlot, int pressedButton, SlotActionType actionType, CallbackInfo ci) {
+        //In case of clicking outside of inventory, just ignore
+        if (slot == null) return;
+        if (pressedButton != 0 && pressedButton != 1 && pressedButton != 2) return; //Only left, right and middle clicks are handled
+
+
+        //Bypass the middle click filter, so that we can handle the middle click
+        if (isBypassActive()) {
+            pressedButton = MIDDLE_CLICK;
             actionType = SlotActionType.CLONE;
         }
 
-        if (actionType == SlotActionType.PICKUP_ALL) return;
-        if (!InvTweaksBehaviorRegistry.isScreenSupported(handler.getClass())) {
-            if (MinecraftClient.getInstance().player != null)
-                MinecraftClient.getInstance().player.sendMessage(new LiteralText("This container is not supported by Marucs' Invtweaks"), false);
+        //We do not handle pickup all, so we can just call the original method
+        if (!isSlotActionTypeSupported(actionType)) return;
+
+        if (!isScreenSupported()) {
+            warnPlayer("This screen is not supported by Marucs' InvTweaks");
             return;
         }
 
-        //In case of clicking outside of inventory, just ignore
-        if (slot == null) return;
-
         ScreenSpecification screenSpecs = InvTweaksBehaviorRegistry.getScreenSpecs(handler.getClass());
-
         System.out.println("ScreenSpecs = " + screenSpecs.getHandlerClass().descriptorString() );
-
-
 
         int totalSize = handler.slots.size();
         int playerInvSize = screenSpecs.getInventoriesSpecification().playerMainInvSize;
@@ -113,96 +153,132 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         System.out.println("PlayerHotbarSize = " + playerHotbarSize );
         System.out.println("ContainerInvSize = " + containerInvSize );
         
-        ScreenInventory containerBoundInfo = new ScreenInventory(handler, 0, containerInvSize-1);
-        ScreenInventory playerMainBoundInfo = new ScreenInventory(handler, containerInvSize, containerInvSize+playerInvSize-1);
-        ScreenInventory hotbarBoundInfo = new ScreenInventory(handler, containerInvSize+playerInvSize, containerInvSize+playerInvSize+playerHotbarSize-1);
-        ScreenInventory playerFullBoundInfo = new ScreenInventory(handler, containerInvSize, containerInvSize+playerInvSize+playerHotbarSize-1);
+        ScreenInventory containerSI = new ScreenInventory(handler, 0, containerInvSize-1);
+        ScreenInventory playerMainSI = new ScreenInventory(handler, containerInvSize, containerInvSize+playerInvSize-1);
+        ScreenInventory hotbarSI = new ScreenInventory(handler, containerInvSize+playerInvSize, containerInvSize+playerInvSize+playerHotbarSize-1);
+        ScreenInventory playerCombinedSI = new ScreenInventory(handler, containerInvSize, containerInvSize+playerInvSize+playerHotbarSize-1);
 
-        InvTweaksOperationInfo operationInfo;
-
-        ScreenInventory clickedInventoryBoundInfo;
-        ScreenInventory otherInventoryBoundInfo;
-
-//        for (int i = playerMainBoundInfo.start; i <= playerMainBoundInfo.end; i++) {
-//            handler.slots.get(i).setStack(new ItemStack(Items.BEDROCK, i + 1));
-//        }
-//        if (1<2)return;
+        ScreenInventory clickedSI;
+        ScreenInventory otherSI;
 
         boolean clickedInventoryIsPlayer;
         //Depending on the index of the clicked slot, determine the clicked inventory
         if (slot.id < containerInvSize) {
-            clickedInventoryBoundInfo = containerBoundInfo;
-            otherInventoryBoundInfo = playerMainBoundInfo;
+            clickedSI = containerSI;
+            otherSI = playerMainSI;
             clickedInventoryIsPlayer = false;
         } else if (slot.id < containerInvSize+playerInvSize){
-            clickedInventoryBoundInfo = playerMainBoundInfo;
-            otherInventoryBoundInfo = containerBoundInfo;
+            clickedSI = playerMainSI;
+            otherSI = containerSI;
             clickedInventoryIsPlayer = true;
         } else {
-            clickedInventoryBoundInfo = hotbarBoundInfo;
-            otherInventoryBoundInfo = containerBoundInfo;
+            clickedSI = hotbarSI;
+            otherSI = containerSI;
             clickedInventoryIsPlayer = true;
         }
 
-        if (actionType == SlotActionType.CLONE && button == 2) { //Sorting functionality
-            //Allow clone operation in creative mode
-            if (slot.getStack().getItem() != Items.AIR && MinecraftClient.getInstance().player.isCreative()) return;
-
-            operationInfo = new InvTweaksOperationInfo(InvTweaksOperationType.SORT, slot, clickedInventoryBoundInfo);
+        //TODO: make this generic instead of hardcoded:
+        if (handler.getClass().equals(PlayerScreenHandler.class)) {
+            if (clickedSI.equals(hotbarSI)) {
+                otherSI = playerMainSI;
+            }
+            else if (clickedSI.equals(playerMainSI)) {
+                otherSI = hotbarSI;
+            }
         }
 
-        else if (button == 0) {
-            if (InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_Z) &&
-                    InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_X)) {
-                deleteme_test(playerFullBoundInfo);                return;
+        InvTweaksOperationType operationType = getOperationType(pressedButton);
 
-            }
-            else if (InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_Z)) {
-                deleteme_test(hotbarBoundInfo);                return;
+        if (operationType == InvTweaksOperationType.NONE || operationType == InvTweaksOperationType.MOVE_STACK)
+            return; //Use vanilla behavior for these operations
 
-            }
-            else if (InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_X)) {
-                deleteme_test(playerMainBoundInfo);                return;
-
-            }
-            else if (InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_C)) {
-                deleteme_test(containerBoundInfo);
-                return;
-            }
-
-            //"All" operations
-            else if (InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_SPACE)){
-                if (Screen.hasAltDown()) operationInfo = new InvTweaksOperationInfo(InvTweaksOperationType.DROP_ALL, slot, clickedInventoryBoundInfo, otherInventoryBoundInfo);
-                else operationInfo = new InvTweaksOperationInfo(InvTweaksOperationType.MOVE_ALL, slot, clickedInventoryBoundInfo, otherInventoryBoundInfo);
-            }
-            //"AllSameType" operations
-            else if (Screen.hasControlDown() && Screen.hasShiftDown() && Screen.hasAltDown()) {
-                if (clickedInventoryIsPlayer) operationInfo = new InvTweaksOperationInfo(InvTweaksOperationType.DROP_ALL_SAME_TYPE, slot, playerFullBoundInfo);
-                else operationInfo = new InvTweaksOperationInfo(InvTweaksOperationType.DROP_ALL_SAME_TYPE, slot, clickedInventoryBoundInfo);
-            }
-            else if (Screen.hasControlDown() && Screen.hasShiftDown()) {
-                if (clickedInventoryIsPlayer) operationInfo = new InvTweaksOperationInfo(InvTweaksOperationType.MOVE_ALL_SAME_TYPE, slot, playerFullBoundInfo, otherInventoryBoundInfo);
-                else operationInfo = new InvTweaksOperationInfo(InvTweaksOperationType.MOVE_ALL_SAME_TYPE, slot, clickedInventoryBoundInfo, otherInventoryBoundInfo);
-            }
-
-            //"One" operations
-            else if (Screen.hasControlDown() && Screen.hasAltDown()) operationInfo = new InvTweaksOperationInfo(InvTweaksOperationType.DROP_ONE, slot, clickedInventoryBoundInfo);
-            else if (Screen.hasControlDown()) operationInfo = new InvTweaksOperationInfo(InvTweaksOperationType.MOVE_ONE, slot, clickedInventoryBoundInfo, otherInventoryBoundInfo);
-
-            //"Stack" operations
-            else if (Screen.hasAltDown()) operationInfo = new InvTweaksOperationInfo(InvTweaksOperationType.DROP_STACK, slot, clickedInventoryBoundInfo);
-
-            //If none, follow Minecraft's default logic
-            else return;
-
-        } else return;
+        InvTweaksOperationInfo operationInfo = new InvTweaksOperationInfo(operationType, slot, clickedSI, otherSI);
 
         try {
             InvTweaksBehaviorRegistry.executeOperation(handler.getClass(), operationInfo);
         } catch (IllegalArgumentException e) {
-            MinecraftClient.getInstance().player.sendMessage(new LiteralText("This container is not supported by Marucs' Invtweaks"), false);
+            warnPlayer("Operation not supported: " + e.getMessage());
+            warnPlayer("Operation info: " + operationInfo);
+            warnPlayer("Operation type: " + operationType);
+            warnPlayer("Clicked slot: " + slot);
+            warnPlayer("Clicked inventory: " + clickedSI);
+            warnPlayer("Other inventory: " + otherSI);
+            warnPlayer("Clicked inventory is player: " + clickedInventoryIsPlayer);
+            warnPlayer("Other inventory is player: " + !clickedInventoryIsPlayer);
+            warnPlayer("Screen specs: " + screenSpecs);
+            warnPlayer("Handler: " + handler);
         }
+
         ci.cancel();
     }
+
+    private boolean isKeyPressed(int key) {
+        return InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), key);
+    }
+
+    private boolean assertOnlyOneBool(boolean... bools) {
+        int count = 0;
+        for (boolean b : bools) {
+            if (b) count++;
+            if (count > 1) return false;
+        }
+        return true;
+    }
+
+    //TODO: Make this a config option
+    private InvTweaksOperationType getOperationType(int pressedButton) {
+        InvTweaksOperationType operationType;
+
+        if (pressedButton == GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
+            operationType = InvTweaksOperationType.SORT;
+        }
+        else if (pressedButton == 0 || pressedButton == 1) {
+            operationType = getSubOperationType(pressedButton);
+        }
+        else {
+            warnPlayer("Unknown button pressed: " + pressedButton);
+            operationType = InvTweaksOperationType.NONE;
+        }
+        return operationType;
+    }
+
+    private InvTweaksOperationType getSubOperationType(int pressedButton) {
+        boolean appliesToOne = Screen.hasControlDown() && !Screen.hasShiftDown();
+        boolean appliesToSameType = Screen.hasControlDown() && Screen.hasShiftDown();
+        boolean appliesToStack = !Screen.hasControlDown() && Screen.hasShiftDown();
+        boolean appliesToAll = !Screen.hasControlDown() && !Screen.hasShiftDown() && isKeyPressed(GLFW.GLFW_KEY_SPACE);
+        boolean drop = Screen.hasAltDown();
+
+        if (!assertOnlyOneBool(appliesToOne, appliesToSameType, appliesToStack, appliesToAll)) {
+            warnPlayer("Unknown combination pressed: applyToOne=" + appliesToOne + ", applyToSameType=" + appliesToSameType + ", applyToStack=" + appliesToStack + ", applyToAll=" + appliesToAll);
+            return InvTweaksOperationType.NONE;
+        }
+
+        InvTweaksOperationType operationType;
+        if (appliesToOne) {
+            if (drop) operationType = InvTweaksOperationType.DROP_ONE;
+            else operationType = InvTweaksOperationType.MOVE_ONE;
+        }
+        else if (appliesToSameType) {
+            if (drop) operationType = InvTweaksOperationType.DROP_ALL_SAME_TYPE;
+            else operationType = InvTweaksOperationType.MOVE_ALL_SAME_TYPE;
+        }
+        else if (appliesToStack) {
+            if (drop) operationType = InvTweaksOperationType.DROP_STACK;
+            else operationType = InvTweaksOperationType.MOVE_STACK;
+        }
+        else if (appliesToAll) {
+            if (drop) operationType = InvTweaksOperationType.DROP_ALL;
+            else operationType = InvTweaksOperationType.MOVE_ALL;
+        }
+        else {
+            if (drop) operationType = InvTweaksOperationType.DROP_STACK;
+            else operationType = InvTweaksOperationType.NONE;
+        }
+
+        return operationType;
+    }
+
+
 
 }

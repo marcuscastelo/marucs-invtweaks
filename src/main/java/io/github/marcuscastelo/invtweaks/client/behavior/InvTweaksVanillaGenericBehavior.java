@@ -214,6 +214,11 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
     }
 
     @Override
+    public void moveStack(InvTweaksOperationInfo operationInfo) {
+        //Assuming mixin is using the default implementation of moveStack (vanilla)
+    }
+
+    @Override
     public void dropStack(InvTweaksOperationInfo operationInfo) {
         ClientPlayerEntity playerEntity = MinecraftClient.getInstance().player;
         MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedInventoryBoundInfo.screenHandler.syncId, operationInfo.clickedSlot.id, 1, SlotActionType.THROW, playerEntity);
