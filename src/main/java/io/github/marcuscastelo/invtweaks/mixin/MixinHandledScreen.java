@@ -40,19 +40,6 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
     private boolean _middleClickBypass = false;
     private boolean isBypassActive() { return _middleClickBypass; }
 
-    void deleteme_test(ScreenInventory si) {
-        try {
-            si.screenHandler.slots.get(si.start).setStack(new ItemStack(Blocks.GRASS));
-            si.screenHandler.slots.get(si.end).setStack(new ItemStack(Blocks.END_STONE));
-            for (int i = si.start + 1; i < si.end; i++) {
-                si.screenHandler.slots.get(i).setStack(new ItemStack(Blocks.BEDROCK, i));
-            }
-        } catch (Exception e) {
-            assert MinecraftClient.getInstance().player != null;
-            MinecraftClient.getInstance().player.sendMessage(new LiteralText(e.getMessage()), false);
-        }
-    }
-
     private boolean isTryingToCloneItem(int button) {
         boolean isCloneBtn = MinecraftClient.getInstance().options.keyPickItem.matchesMouse(button);
         boolean isInCreative = MinecraftClient.getInstance().interactionManager.hasCreativeInventory();
@@ -120,7 +107,6 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         if (slot == null) return;
         if (pressedButton != 0 && pressedButton != 1 && pressedButton != 2) return; //Only left, right and middle clicks are handled
 
-
         //Bypass the middle click filter, so that we can handle the middle click
         if (isBypassActive()) {
             pressedButton = MIDDLE_CLICK;
@@ -146,6 +132,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         //TODO: make this generic instead of hardcoded:
         if (handler.getClass().equals(PlayerScreenHandler.class)) {
             containerInvSize = 9;
+            if (invSlot >= 5 && invSlot < 9) return;
         }
 
         System.out.println("Total = " + totalSize );
@@ -178,18 +165,30 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         }
 
         //TODO: make this generic instead of hardcoded:
-        if (handler.getClass().equals(PlayerScreenHandler.class)) {
-            if (clickedSI.equals(hotbarSI)) {
-                otherSI = playerMainSI;
+        if (handler instanceof PlayerScreenHandler) {
+            if (isKeyPressed(GLFW.GLFW_KEY_W)) {
+                if (clickedSI.equals(playerMainSI)) otherSI = containerSI;
+                else if (clickedSI.equals(hotbarSI)) otherSI = playerMainSI;
+                else if (clickedSI.equals(containerSI)) otherSI = hotbarSI;
             }
-            else if (clickedSI.equals(playerMainSI)) {
-                otherSI = hotbarSI;
+            else if (isKeyPressed(GLFW.GLFW_KEY_S)) {
+                if (clickedSI.equals(containerSI)) otherSI = playerMainSI;
+                else if (clickedSI.equals(playerMainSI)) otherSI = hotbarSI;
+                else if (clickedSI.equals(hotbarSI)) otherSI = containerSI;
+            }
+            else {
+                if (clickedSI.equals(hotbarSI)) {
+                    otherSI = playerMainSI;
+                }
+                else if (clickedSI.equals(playerMainSI)) {
+                    otherSI = hotbarSI;
+                }
             }
         }
 
         InvTweaksOperationType operationType = getOperationType(pressedButton);
 
-        if (operationType == InvTweaksOperationType.NONE || operationType == InvTweaksOperationType.MOVE_STACK)
+        if (operationType == InvTweaksOperationType.NONE)
             return; //Use vanilla behavior for these operations
 
         InvTweaksOperationInfo operationInfo = new InvTweaksOperationInfo(operationType, slot, clickedSI, otherSI);
@@ -273,12 +272,15 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         }
         else {
             if (drop) operationType = InvTweaksOperationType.DROP_STACK;
-            else operationType = InvTweaksOperationType.NONE;
+            else {
+                if (isKeyPressed(GLFW.GLFW_KEY_W) || isKeyPressed(GLFW.GLFW_KEY_S)) {
+                    operationType = InvTweaksOperationType.MOVE_STACK;
+                } else{
+                    operationType = InvTweaksOperationType.NONE;
+                }
+            }
         }
 
         return operationType;
     }
-
-
-
 }

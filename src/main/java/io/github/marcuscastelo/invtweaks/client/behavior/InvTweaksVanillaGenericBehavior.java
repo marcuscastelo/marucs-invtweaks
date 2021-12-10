@@ -215,7 +215,11 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
 
     @Override
     public void moveStack(InvTweaksOperationInfo operationInfo) {
-        //Assuming mixin is using the default implementation of moveStack (vanilla)
+        ScreenHandler handler = operationInfo.clickedInventoryBoundInfo.screenHandler;
+        int from = operationInfo.clickedSlot.id;
+        ItemStack stack = operationInfo.clickedSlot.getStack();
+        moveToInventory(handler,from, operationInfo.otherInventoryBoundInfo, stack.getCount(), false);
+
     }
 
     @Override

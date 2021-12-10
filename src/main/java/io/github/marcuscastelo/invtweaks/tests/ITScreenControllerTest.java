@@ -2,7 +2,7 @@ package io.github.marcuscastelo.invtweaks.tests;
 
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
-import io.github.marcuscastelo.invtweaks.util.InvTweaksScreenController;
+import io.github.marcuscastelo.invtweaks.util.InvtweaksScreenController;
 import io.github.marcuscastelo.invtweaks.util.ItemStackUtils;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -11,9 +11,9 @@ import net.minecraft.item.Items;
 import java.util.*;
 
 public class ITScreenControllerTest {
-    private final InvTweaksScreenController controller;
+    private final InvtweaksScreenController controller;
     private final ScreenSpecification screenSpecification;
-    public ITScreenControllerTest(InvTweaksScreenController controller, ScreenSpecification screenSpecification) {
+    public ITScreenControllerTest(InvtweaksScreenController controller, ScreenSpecification screenSpecification) {
         this.controller = controller;
         this.screenSpecification = screenSpecification;
     }
@@ -77,7 +77,7 @@ public class ITScreenControllerTest {
 
             //Places stack held by the controller (may end up having another stack being held).
             //Returns last slot
-            public int placeHeldStack(InvTweaksScreenController controller) {
+            public int placeHeldStack(InvtweaksScreenController controller) {
                 assert controller.isHoldingStack();
                 int targetSlot;
                 boolean dbg_other_type = false;

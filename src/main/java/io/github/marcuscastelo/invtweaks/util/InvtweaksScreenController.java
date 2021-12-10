@@ -9,14 +9,14 @@ import net.minecraft.item.Items;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.SlotActionType;
 
-public class InvTweaksScreenController {
+public class InvtweaksScreenController {
     private final ScreenHandler handler;
     private final ClientPlayerInteractionManager interaction;
     private final ClientPlayerEntity player;
 
     private ItemStack heldStack = ItemStack.EMPTY;
 
-    public InvTweaksScreenController(ScreenHandler handler) {
+    public InvtweaksScreenController(ScreenHandler handler) {
         this.handler = handler;
         this.interaction = MinecraftClient.getInstance().interactionManager;
         if (this.interaction == null) throw new RuntimeException("MinecraftClient.getInstance().interactionManager is null!");
