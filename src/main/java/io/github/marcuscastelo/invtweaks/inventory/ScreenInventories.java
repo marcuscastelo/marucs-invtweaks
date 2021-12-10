@@ -45,13 +45,13 @@ public class ScreenInventories {
 
     public ScreenInventory getClickedInventory(int slotId) {
         ScreenInventory clickedInventory;
-        if (externalSI.isPresent() && slotId < externalSI.get().end()) {
+        if (externalSI.isPresent() && slotId <= externalSI.get().end()) {
             clickedInventory = externalSI.get();
         }
-        else if (slotId < playerMainSI.end()) {
+        else if (slotId <= playerMainSI.end()) {
             clickedInventory = playerMainSI;
         }
-        else if (slotId < playerHotbarSI.end()) {
+        else if (slotId <= playerHotbarSI.end()) {
             clickedInventory = playerHotbarSI;
         }
         else {

@@ -2,7 +2,7 @@ package io.github.marcuscastelo.invtweaks.mixin;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationType;
-import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
+import io.github.marcuscastelo.invtweaks.InvtweaksConfig;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventories;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry;
@@ -36,6 +36,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
 
     @Shadow public abstract boolean mouseClicked(double mouseX, double mouseY, int button);
 
+    @Shadow protected boolean cursorDragging;
     private boolean _middleClickBypass = false;
     private boolean isBypassActive() { return _middleClickBypass; }
 
@@ -81,6 +82,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
     @Inject(method = "mouseClicked", at=@At("HEAD"), cancellable = true)
     protected void mouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir)
     {
+        System.out.println("Mouse clicked: " + button);
         //mouseClicked is called before onMouseClick
         //we use this to bypass the middle click filter
         bypassMiddleClickBarrier(mouseX, mouseY, button, cir);
@@ -100,7 +102,11 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
     }
 
     private boolean isOverflowAllowed(int button) {
-        return button == 1; //Right click
+        return switch (InvtweaksConfig.getOverflowMode()) {
+            case ALWAYS -> true;
+            case NEVER -> false;
+            case ON_RIGHT_CLICK -> button == 1;
+        };
     }
 
     private ScreenInventory getTargetInventory(ScreenInventory clickedSI, ScreenInventories screenInventories, boolean allowOverflow) {
@@ -125,6 +131,8 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
             pressedButton = MIDDLE_CLICK;
             actionType = SlotActionType.CLONE;
         }
+
+        System.out.println("Is cursor dragging: " + this.cursorDragging);
 
         //We do not handle pickup all, so we can just call the original method
         if (!isSlotActionTypeSupported(actionType)) return;
@@ -172,9 +180,9 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         return InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), key);
     }
 
-    private boolean assertOnlyOneBool(boolean... bools) {
+    private boolean assertOnlyOneBool(boolean... booleans) {
         int count = 0;
-        for (boolean b : bools) {
+        for (boolean b : booleans) {
             if (b) count++;
             if (count > 1) return false;
         }

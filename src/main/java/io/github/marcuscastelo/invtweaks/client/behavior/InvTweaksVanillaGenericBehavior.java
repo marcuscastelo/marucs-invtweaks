@@ -109,6 +109,9 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
         if (remainingTotalClicks > 0)
             interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player);
 
+        currentHeldStack = handler.getCursorStack();
+        if (!currentHeldStack.isEmpty())
+            interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player);
 
         if (candidateDestination > toSlotId) candidateDestination--;
         return candidateDestination;
