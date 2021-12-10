@@ -44,7 +44,7 @@ public class InvTweaksVanillaMerchantBehavior extends InvTweaksVanillaGenericBeh
                 takeTrade(operationInfo);
         }
 
-        moveToInventory(operationInfo.clickedInventoryBoundInfo.screenHandler, operationInfo.clickedSlot.id, operationInfo.otherInventoryBoundInfo, operationInfo.clickedSlot.getStack().getCount(), false);
+        moveToInventory(operationInfo.clickedInventoryBoundInfo.screenHandler(), operationInfo.clickedSlot.id, operationInfo.otherInventoryBoundInfo, operationInfo.clickedSlot.getStack().getCount(), false);
     }
 
     private ItemStack subtract(ItemStack A, ItemStack B) {
@@ -67,21 +67,21 @@ public class InvTweaksVanillaMerchantBehavior extends InvTweaksVanillaGenericBeh
     }
 
     private boolean hasExaustedOutput(InvTweaksOperationInfo operationInfo) {
-        return operationInfo.clickedInventoryBoundInfo.screenHandler.slots.get(VILLAGER_OUTPUT_SLOT).getStack().isEmpty();
+        return operationInfo.clickedInventoryBoundInfo.screenHandler().slots.get(VILLAGER_OUTPUT_SLOT).getStack().isEmpty();
     }
 
     private ItemStack[] getPlayerOffer(InvTweaksOperationInfo operationInfo) {
         return new ItemStack[] {
-                operationInfo.clickedInventoryBoundInfo.screenHandler.slots.get(0).getStack(),
-                operationInfo.clickedInventoryBoundInfo.screenHandler.slots.get(1).getStack()
+                operationInfo.clickedInventoryBoundInfo.screenHandler().slots.get(0).getStack(),
+                operationInfo.clickedInventoryBoundInfo.screenHandler().slots.get(1).getStack()
         };
     }
 
     private int[] findSupplySlots(InvTweaksOperationInfo operationInfo, ItemStack[] search) {
         int[] slots = new int[search.length];
         for (int j = 0; j < search.length;) {
-            for (int i = operationInfo.otherInventoryBoundInfo.start; i < operationInfo.otherInventoryBoundInfo.end; i++) {
-                if (operationInfo.otherInventoryBoundInfo.screenHandler.slots.get(i).getStack().getItem() == search[j].getItem()) {
+            for (int i = operationInfo.otherInventoryBoundInfo.start(); i < operationInfo.otherInventoryBoundInfo.end(); i++) {
+                if (operationInfo.otherInventoryBoundInfo.screenHandler().slots.get(i).getStack().getItem() == search[j].getItem()) {
                     slots[j++] = i;
                     break;
                 }
@@ -96,13 +96,13 @@ public class InvTweaksVanillaMerchantBehavior extends InvTweaksVanillaGenericBeh
         ScreenInventory obi = operationInfo.otherInventoryBoundInfo;
 
         for (int i = 0; i < fromSlots.length; i++)
-            moveToSlot(cbi.screenHandler, cbi.end, fromSlots[i], cbi.start+i, obi.screenHandler.slots.get(fromSlots[i]).getStack().getCount() , false);
+            moveToSlot(cbi.screenHandler(), cbi.end(), fromSlots[i], cbi.start() +i, obi.screenHandler().slots.get(fromSlots[i]).getStack().getCount() , false);
     }
 
     private void takeTrade(InvTweaksOperationInfo operationInfo) {
         ScreenInventory cbi = operationInfo.clickedInventoryBoundInfo;
         ScreenInventory obi = operationInfo.otherInventoryBoundInfo;
 
-        moveToInventory(cbi.screenHandler, VILLAGER_OUTPUT_SLOT, obi, cbi.screenHandler.slots.get(VILLAGER_OUTPUT_SLOT).getStack().getCount(), false);
+        moveToInventory(cbi.screenHandler(), VILLAGER_OUTPUT_SLOT, obi, cbi.screenHandler().slots.get(VILLAGER_OUTPUT_SLOT).getStack().getCount(), false);
     }
 }

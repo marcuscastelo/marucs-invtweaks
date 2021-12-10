@@ -115,7 +115,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
     }
 
     protected int moveToInventory(ScreenHandler handler, int fromSlot, ScreenInventory destinationBoundInfo, int quantity, boolean sorting) {
-        int destinationStart = destinationBoundInfo.start;
+        int destinationStart = destinationBoundInfo.start();
 
         int inventorySize = destinationBoundInfo.getSize();
         return moveToSlot(handler, destinationStart+inventorySize-1, fromSlot, destinationStart, quantity, sorting);
@@ -123,9 +123,9 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
 
     @Override
     public void sort(InvTweaksOperationInfo operationInfo) {
-        ScreenHandler handler = operationInfo.clickedInventoryBoundInfo.screenHandler;
-        int startSlot = operationInfo.clickedInventoryBoundInfo.start;
-        int endSlot = operationInfo.clickedInventoryBoundInfo.end;
+        ScreenHandler handler = operationInfo.clickedInventoryBoundInfo.screenHandler();
+        int startSlot = operationInfo.clickedInventoryBoundInfo.start();
+        int endSlot = operationInfo.clickedInventoryBoundInfo.end();
 
         Set<Item> items = new HashSet<>();
         HashMap<Item, Integer> quantityPerItem = new HashMap<>();
@@ -163,10 +163,10 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
 
     @Override
     public void moveAll(InvTweaksOperationInfo operationInfo) {
-        for (int slotId = operationInfo.clickedInventoryBoundInfo.start; slotId <= operationInfo.clickedInventoryBoundInfo.end; slotId++) {
-            ItemStack stack = operationInfo.clickedInventoryBoundInfo.screenHandler.getSlot(slotId).getStack();
+        for (int slotId = operationInfo.clickedInventoryBoundInfo.start(); slotId <= operationInfo.clickedInventoryBoundInfo.end(); slotId++) {
+            ItemStack stack = operationInfo.clickedInventoryBoundInfo.screenHandler().getSlot(slotId).getStack();
             if (stack.getItem() == Items.AIR) continue;
-            int result = moveToInventory(operationInfo.clickedInventoryBoundInfo.screenHandler, slotId, operationInfo.otherInventoryBoundInfo, stack.getCount(), false);
+            int result = moveToInventory(operationInfo.clickedInventoryBoundInfo.screenHandler(), slotId, operationInfo.otherInventoryBoundInfo, stack.getCount(), false);
             if (result == MOVERESULT_FULL) break;
         }
     }
@@ -174,19 +174,19 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
     @Override
     public void dropAll(InvTweaksOperationInfo operationInfo) {
         ClientPlayerEntity playerEntity = MinecraftClient.getInstance().player;
-        for (int slotId = operationInfo.clickedInventoryBoundInfo.start; slotId <= operationInfo.clickedInventoryBoundInfo.end; slotId++) {
-            MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedInventoryBoundInfo.screenHandler.syncId, slotId, 1, SlotActionType.THROW, playerEntity);
+        for (int slotId = operationInfo.clickedInventoryBoundInfo.start(); slotId <= operationInfo.clickedInventoryBoundInfo.end(); slotId++) {
+            MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedInventoryBoundInfo.screenHandler().syncId, slotId, 1, SlotActionType.THROW, playerEntity);
         }
     }
 
     @Override
     public void moveAllSameType(InvTweaksOperationInfo operationInfo) {
         Item itemType = operationInfo.clickedSlot.getStack().getItem();
-        for (int slot = operationInfo.clickedInventoryBoundInfo.start; slot <= operationInfo.clickedInventoryBoundInfo.end; slot++) {
-            ItemStack stack = operationInfo.clickedInventoryBoundInfo.screenHandler.slots.get(slot).getStack();
+        for (int slot = operationInfo.clickedInventoryBoundInfo.start(); slot <= operationInfo.clickedInventoryBoundInfo.end(); slot++) {
+            ItemStack stack = operationInfo.clickedInventoryBoundInfo.screenHandler().slots.get(slot).getStack();
             if (stack.getItem() != itemType) continue;
 
-            int result = moveToInventory(operationInfo.clickedInventoryBoundInfo.screenHandler, slot, operationInfo.otherInventoryBoundInfo, stack.getCount(), false);
+            int result = moveToInventory(operationInfo.clickedInventoryBoundInfo.screenHandler(), slot, operationInfo.otherInventoryBoundInfo, stack.getCount(), false);
             if (result == MOVERESULT_FULL) break;
         }
     }
@@ -195,16 +195,16 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
     public void dropAllSameType(InvTweaksOperationInfo operationInfo) {
         ClientPlayerEntity playerEntity = MinecraftClient.getInstance().player;
         Item itemType = operationInfo.clickedSlot.getStack().getItem();
-        for (int slot = operationInfo.clickedInventoryBoundInfo.start; slot <= operationInfo.clickedInventoryBoundInfo.end; slot++) {
-            ItemStack stack = operationInfo.clickedInventoryBoundInfo.screenHandler.slots.get(slot).getStack();
+        for (int slot = operationInfo.clickedInventoryBoundInfo.start(); slot <= operationInfo.clickedInventoryBoundInfo.end(); slot++) {
+            ItemStack stack = operationInfo.clickedInventoryBoundInfo.screenHandler().slots.get(slot).getStack();
             if (stack.getItem() != itemType) continue;
-            MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedInventoryBoundInfo.screenHandler.syncId, slot, 1, SlotActionType.THROW, playerEntity);
+            MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedInventoryBoundInfo.screenHandler().syncId, slot, 1, SlotActionType.THROW, playerEntity);
         }
     }
 
     @Override
     public void moveOne(InvTweaksOperationInfo operationInfo) {
-        ScreenHandler handler = operationInfo.clickedInventoryBoundInfo.screenHandler;
+        ScreenHandler handler = operationInfo.clickedInventoryBoundInfo.screenHandler();
         int from = operationInfo.clickedSlot.id;
         int result = moveToInventory(handler,from, operationInfo.otherInventoryBoundInfo, 1, false);
     }
@@ -212,12 +212,12 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
     @Override
     public void dropOne(InvTweaksOperationInfo operationInfo) {
         ClientPlayerEntity playerEntity = MinecraftClient.getInstance().player;
-        MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedInventoryBoundInfo.screenHandler.syncId, operationInfo.clickedSlot.id, 0, SlotActionType.THROW, playerEntity);
+        MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedInventoryBoundInfo.screenHandler().syncId, operationInfo.clickedSlot.id, 0, SlotActionType.THROW, playerEntity);
     }
 
     @Override
     public void moveStack(InvTweaksOperationInfo operationInfo) {
-        ScreenHandler handler = operationInfo.clickedInventoryBoundInfo.screenHandler;
+        ScreenHandler handler = operationInfo.clickedInventoryBoundInfo.screenHandler();
         int from = operationInfo.clickedSlot.id;
         ItemStack stack = operationInfo.clickedSlot.getStack();
         moveToInventory(handler,from, operationInfo.otherInventoryBoundInfo, stack.getCount(), false);
@@ -227,6 +227,6 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
     @Override
     public void dropStack(InvTweaksOperationInfo operationInfo) {
         ClientPlayerEntity playerEntity = MinecraftClient.getInstance().player;
-        MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedInventoryBoundInfo.screenHandler.syncId, operationInfo.clickedSlot.id, 1, SlotActionType.THROW, playerEntity);
+        MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedInventoryBoundInfo.screenHandler().syncId, operationInfo.clickedSlot.id, 1, SlotActionType.THROW, playerEntity);
     }
 }

@@ -3,16 +3,14 @@ package io.github.marcuscastelo.invtweaks.mixin;
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationType;
 import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
+import io.github.marcuscastelo.invtweaks.inventory.ScreenInventories;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry;
-import net.minecraft.block.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.CraftingResultSlot;
@@ -101,6 +99,20 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         player.sendMessage(new LiteralText(message), false);
     }
 
+    private boolean isOverflowAllowed(int button) {
+        return button == 1; //Right click
+    }
+
+    private ScreenInventory getTargetInventory(ScreenInventory clickedSI, ScreenInventories screenInventories, boolean allowOverflow) {
+        int verticalTrend = isKeyPressed(GLFW.GLFW_KEY_W) ? 1 : isKeyPressed(GLFW.GLFW_KEY_S) ? -1 : 0;
+
+        return switch (verticalTrend) {
+            case 0 -> screenInventories.getOppositeInventory(clickedSI, allowOverflow);
+            case 1 -> screenInventories.getInventoryUpwards(clickedSI, allowOverflow);
+            case -1 -> screenInventories.getInventoryDownwards(clickedSI, allowOverflow);
+            default -> throw new IllegalStateException("Unexpected value: " + verticalTrend);
+        };
+    }
 
     @Inject(method = "onMouseClick(Lnet/minecraft/screen/slot/Slot;IILnet/minecraft/screen/slot/SlotActionType;)V", at = @At("HEAD"), cancellable = true)
     protected void onMouseClick(Slot slot, int invSlot, int pressedButton, SlotActionType actionType, CallbackInfo ci) {
@@ -124,68 +136,22 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
             return;
         }
 
-        ScreenSpecification screenSpecs = InvTweaksBehaviorRegistry.getScreenSpecs(handler.getClass());
-        System.out.println("ScreenSpecs = " + screenSpecs.getHandlerClass().descriptorString() );
-
-        int totalSize = handler.slots.size();
-        int playerInvSize = screenSpecs.getInventoriesSpecification().playerMainInvSize;
-        int playerHotbarSize = screenSpecs.getInventoriesSpecification().playerHotbarSize;
-        int containerInvSize = totalSize - (playerInvSize + playerHotbarSize);
+        ScreenInventories screenInvs = new ScreenInventories(this.handler);
 
         //TODO: make this generic instead of hardcoded:
         if (handler.getClass().equals(PlayerScreenHandler.class)) {
-            containerInvSize = 9;
             if (invSlot >= 5 && invSlot < 9) return;
         }
 
-        ScreenInventory containerSI = new ScreenInventory(handler, 0, containerInvSize-1);
-        ScreenInventory playerMainSI = new ScreenInventory(handler, containerInvSize, containerInvSize+playerInvSize-1);
-        ScreenInventory hotbarSI = new ScreenInventory(handler, containerInvSize+playerInvSize, containerInvSize+playerInvSize+playerHotbarSize-1);
-        ScreenInventory playerCombinedSI = new ScreenInventory(handler, containerInvSize, containerInvSize+playerInvSize+playerHotbarSize-1);
-
-        ScreenInventory clickedSI;
-        ScreenInventory otherSI;
-
-        boolean allowOverflow = pressedButton == 1;
-
-        //Depending on the index of the clicked slot, determine the clicked inventory
-        if (slot.id < containerInvSize) {
-            clickedSI = containerSI;
-            otherSI = allowOverflow ? playerCombinedSI : playerMainSI;
-        } else if (slot.id < containerInvSize+playerInvSize){
-            clickedSI = playerMainSI;
-            otherSI = containerSI;
-        } else {
-            clickedSI = hotbarSI;
-            otherSI = containerSI;
-        }
-
-        if (handler instanceof PlayerScreenHandler) {
-            if (clickedSI.equals(hotbarSI)) {
-                otherSI = playerMainSI;
-            }
-            else if (clickedSI.equals(playerMainSI)) {
-                otherSI = hotbarSI;
-            }
-        }
-
-        if (isKeyPressed(GLFW.GLFW_KEY_W)) {
-            if (clickedSI.equals(playerMainSI)) otherSI = containerSI;
-            else if (clickedSI.equals(hotbarSI)) otherSI = allowOverflow ? playerCombinedSI : playerMainSI;
-            else if (clickedSI.equals(containerSI)) otherSI = hotbarSI;
-        }
-        else if (isKeyPressed(GLFW.GLFW_KEY_S)) {
-            if (clickedSI.equals(containerSI)) otherSI = allowOverflow ? playerCombinedSI : playerMainSI;
-            else if (clickedSI.equals(playerMainSI)) otherSI = hotbarSI;
-            else if (clickedSI.equals(hotbarSI)) otherSI = containerSI;
-        }
+        ScreenInventory clickedSI = screenInvs.getClickedInventory(slot.id);
+        ScreenInventory targetSI = getTargetInventory(clickedSI, screenInvs, isOverflowAllowed(pressedButton));
 
         InvTweaksOperationType operationType = getOperationType(pressedButton);
 
         if (operationType == InvTweaksOperationType.NONE)
             return; //Use vanilla behavior for these operations
 
-        InvTweaksOperationInfo operationInfo = new InvTweaksOperationInfo(operationType, slot, clickedSI, otherSI);
+        InvTweaksOperationInfo operationInfo = new InvTweaksOperationInfo(operationType, slot, clickedSI, targetSI);
 
         try {
             InvTweaksBehaviorRegistry.executeOperation(handler.getClass(), operationInfo);
@@ -195,8 +161,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
             warnPlayer("Operation type: " + operationType);
             warnPlayer("Clicked slot: " + slot);
             warnPlayer("Clicked inventory: " + clickedSI);
-            warnPlayer("Other inventory: " + otherSI);
-            warnPlayer("Screen specs: " + screenSpecs);
+            warnPlayer("Other inventory: " + targetSI);
             warnPlayer("Handler: " + handler);
         }
 
