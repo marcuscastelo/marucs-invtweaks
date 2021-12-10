@@ -88,7 +88,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
     }
 
     private boolean isSlotActionTypeSupported(SlotActionType type) {
-        return type != SlotActionType.PICKUP_ALL;
+        return type == SlotActionType.CLONE || type == SlotActionType.PICKUP || type == SlotActionType.QUICK_MOVE;
     }
 
     private boolean isScreenSupported() {

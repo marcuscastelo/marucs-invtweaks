@@ -110,8 +110,31 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
         return candidateDestination;
     }
 
+    //TODO: move to helper class
+    private boolean hasEmptySlots(ScreenHandler handler, ScreenInventory destinationBoundInfo) {
+        int destinationStart = destinationBoundInfo.start;
+        int destinationEnd = destinationBoundInfo.end;
+
+        int firstEmptySlot = Integer.MAX_VALUE;
+        for (int i = destinationStart; i <= destinationEnd; i++) {
+            if (!handler.slots.get(i).hasStack()) {
+
+                System.out.println("Found empty slot: " + i);
+                System.out.println("Item: " + handler.slots.get(i).getStack().getItem());
+
+                firstEmptySlot = i;
+                break;
+            }
+        }
+
+        return firstEmptySlot <= destinationEnd;
+    }
+
     protected int moveToInventory(ScreenHandler handler, int fromSlot, ScreenInventory destinationBoundInfo, int quantity, boolean sorting) {
         int destinationStart = destinationBoundInfo.start;
+
+        if (!hasEmptySlots(handler, destinationBoundInfo)) return -1;
+
         int inventorySize = destinationBoundInfo.getSize();
         return moveToSlot(handler, destinationStart+inventorySize-1, fromSlot, destinationStart, quantity, sorting);
     }
