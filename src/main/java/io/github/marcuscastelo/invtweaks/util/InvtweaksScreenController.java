@@ -43,6 +43,7 @@ public class InvtweaksScreenController {
     }
 
     public void placeSome(int slot, int quantity) {
+        //TODO: if quantity == heldStack.getCount() then we can just place the stack
         for (int i = 0; i < quantity; i ++) {
             placeOne(slot);
         }

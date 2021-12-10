@@ -4,10 +4,7 @@ import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
 import io.github.marcuscastelo.invtweaks.OperationExecutor;
 import io.github.marcuscastelo.invtweaks.api.ScreenInventoriesSpecification;
 import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
-import io.github.marcuscastelo.invtweaks.client.behavior.IInvTweaksBehavior;
-import io.github.marcuscastelo.invtweaks.client.behavior.InvTweaksVanillaGenericBehavior;
-import io.github.marcuscastelo.invtweaks.client.behavior.InvTweaksVanillaMerchantBehavior;
-import io.github.marcuscastelo.invtweaks.client.behavior.InvTweaksVanillaPlayerBehaviour;
+import io.github.marcuscastelo.invtweaks.client.behavior.*;
 import net.minecraft.screen.*;
 
 import java.util.HashMap;
@@ -32,11 +29,11 @@ public class InvTweaksBehaviorRegistry {
             throw new IllegalArgumentException("Screen "  + screenHandlerClass + " doesn't have a behavior");
 
         IInvTweaksBehavior behavior = screenBehaviorMap.get(screenHandlerClass).getInvTweaksBehavior();
-        Optional<OperationExecutor> executor = operationInfo.type.asOperationExecutor(behavior);
+        Optional<OperationExecutor> executor = operationInfo.type().asOperationExecutor(behavior);
         if (executor.isPresent()) {
             executor.get().execute(operationInfo);
         } else {
-            System.out.println("Operation " + operationInfo.type + " is not supported by " + behavior.getClass());
+            System.out.println("Operation " + operationInfo.type() + " is not supported by " + behavior.getClass());
         }
     }
 
@@ -44,40 +41,47 @@ public class InvTweaksBehaviorRegistry {
         return screenBehaviorMap.containsKey(screenHandlerClass);
     }
 
-    public static ScreenSpecification.Builder createScreenInfoBuilder(Class<? extends ScreenHandler> handlerClass) {
+    public static ScreenSpecification.Builder createSpecsBuilder(Class<? extends ScreenHandler> handlerClass) {
         return new ScreenSpecification.Builder(handlerClass);
     }
 
-    public static ScreenSpecification.Builder createVanillaGenericScreenInfoBuilder(Class<? extends ScreenHandler> handlerClass) {
-        return createScreenInfoBuilder(handlerClass).withBehavior(new InvTweaksVanillaGenericBehavior());
+    public static ScreenSpecification.Builder createVanillaGenericSpecsBuilder(Class<? extends ScreenHandler> handlerClass) {
+        return createSpecsBuilder(handlerClass).withBehavior(new InvTweaksVanillaGenericBehavior());
     }
 
-    public static ScreenSpecification buildDefaultedVanillaGenericScreenInfo(Class<? extends ScreenHandler> handlerClass) {
-        return createVanillaGenericScreenInfoBuilder(handlerClass).build();
+    public static ScreenSpecification buildVanillaGeneric(Class<? extends ScreenHandler> handlerClass) {
+        return createVanillaGenericSpecsBuilder(handlerClass).build();
     }
 
     static {
-        register(buildDefaultedVanillaGenericScreenInfo(GenericContainerScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(ShulkerBoxScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(CraftingScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(BrewingStandScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(BeaconScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(HopperScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(Generic3x3ContainerScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(FurnaceScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(SmokerScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(BlastFurnaceScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(EnchantmentScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(AnvilScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(CartographyTableScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(LoomScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(SmithingScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(GrindstoneScreenHandler.class));
-        register(buildDefaultedVanillaGenericScreenInfo(HorseScreenHandler.class));
+        //Default behaviour
+        register(buildVanillaGeneric(GenericContainerScreenHandler.class));
+        register(buildVanillaGeneric(ShulkerBoxScreenHandler.class));
+        register(buildVanillaGeneric(BrewingStandScreenHandler.class));
+        register(buildVanillaGeneric(BeaconScreenHandler.class));
+        register(buildVanillaGeneric(HopperScreenHandler.class));
+        register(buildVanillaGeneric(Generic3x3ContainerScreenHandler.class));
+        register(buildVanillaGeneric(FurnaceScreenHandler.class));
+        register(buildVanillaGeneric(SmokerScreenHandler.class));
+        register(buildVanillaGeneric(BlastFurnaceScreenHandler.class));
+        register(buildVanillaGeneric(EnchantmentScreenHandler.class));
+        register(buildVanillaGeneric(AnvilScreenHandler.class));
+        register(buildVanillaGeneric(CartographyTableScreenHandler.class));
+        register(buildVanillaGeneric(LoomScreenHandler.class));
+        register(buildVanillaGeneric(SmithingScreenHandler.class));
+        register(buildVanillaGeneric(GrindstoneScreenHandler.class));
+        register(buildVanillaGeneric(HorseScreenHandler.class));
 
         ScreenInventoriesSpecification playerScreenInvSpecs = new ScreenInventoriesSpecification(false, 27, 9);
-        register(createScreenInfoBuilder(PlayerScreenHandler.class).withBehavior(new InvTweaksVanillaPlayerBehaviour()).withInventoriesSpecification(playerScreenInvSpecs).build());
-        register(createScreenInfoBuilder(MerchantScreenHandler.class).withBehavior(new InvTweaksVanillaMerchantBehavior()).build());
+        register(createSpecsBuilder(PlayerScreenHandler.class).withBehavior(new InvTweaksVanillaPlayerBehaviour()).withInventoriesSpecification(playerScreenInvSpecs).build());
+
+
+        //Merchant behaviour
+        register(createSpecsBuilder(MerchantScreenHandler.class).withBehavior(new InvTweaksVanillaMerchantBehavior()).build());
+
+
+        //Crafting behaviour
+        register(createSpecsBuilder(CraftingScreenHandler.class).withBehavior(new InvTweaksVanillaCraftingBehavior()).build());
     }
 
 }

@@ -14,14 +14,14 @@ public class InvTweaksVanillaMerchantBehavior extends InvTweaksVanillaGenericBeh
 
     @Override
     public void moveAll(InvTweaksOperationInfo operationInfo) {
-        System.out.println(operationInfo.clickedSlot.id);
-        if (operationInfo.clickedSlot.id != VILLAGER_OUTPUT_SLOT) { super.moveAll(operationInfo); return; }
+        System.out.println(operationInfo.clickedSlot().id);
+        if (operationInfo.clickedSlot().id != VILLAGER_OUTPUT_SLOT) { super.moveAll(operationInfo); return; }
         tradeAll(operationInfo);
     }
 
     @Override
     public void dropAll(InvTweaksOperationInfo operationInfo) {
-        if (operationInfo.clickedSlot.id != VILLAGER_OUTPUT_SLOT) { super.moveAll(operationInfo); return; }
+        if (operationInfo.clickedSlot().id != VILLAGER_OUTPUT_SLOT) { super.moveAll(operationInfo); return; }
     }
 
     private void tradeAll(InvTweaksOperationInfo operationInfo) {
@@ -44,7 +44,7 @@ public class InvTweaksVanillaMerchantBehavior extends InvTweaksVanillaGenericBeh
                 takeTrade(operationInfo);
         }
 
-        moveToInventory(operationInfo.clickedInventoryBoundInfo.screenHandler(), operationInfo.clickedSlot.id, operationInfo.otherInventoryBoundInfo, operationInfo.clickedSlot.getStack().getCount(), false);
+        moveToInventory(operationInfo.clickedSI().screenHandler(), operationInfo.clickedSlot().id, operationInfo.otherSI(), operationInfo.clickedSlot().getStack().getCount(), false);
     }
 
     private ItemStack subtract(ItemStack A, ItemStack B) {
@@ -67,21 +67,21 @@ public class InvTweaksVanillaMerchantBehavior extends InvTweaksVanillaGenericBeh
     }
 
     private boolean hasExaustedOutput(InvTweaksOperationInfo operationInfo) {
-        return operationInfo.clickedInventoryBoundInfo.screenHandler().slots.get(VILLAGER_OUTPUT_SLOT).getStack().isEmpty();
+        return operationInfo.clickedSI().screenHandler().slots.get(VILLAGER_OUTPUT_SLOT).getStack().isEmpty();
     }
 
     private ItemStack[] getPlayerOffer(InvTweaksOperationInfo operationInfo) {
         return new ItemStack[] {
-                operationInfo.clickedInventoryBoundInfo.screenHandler().slots.get(0).getStack(),
-                operationInfo.clickedInventoryBoundInfo.screenHandler().slots.get(1).getStack()
+                operationInfo.clickedSI().screenHandler().slots.get(0).getStack(),
+                operationInfo.clickedSI().screenHandler().slots.get(1).getStack()
         };
     }
 
     private int[] findSupplySlots(InvTweaksOperationInfo operationInfo, ItemStack[] search) {
         int[] slots = new int[search.length];
         for (int j = 0; j < search.length;) {
-            for (int i = operationInfo.otherInventoryBoundInfo.start(); i < operationInfo.otherInventoryBoundInfo.end(); i++) {
-                if (operationInfo.otherInventoryBoundInfo.screenHandler().slots.get(i).getStack().getItem() == search[j].getItem()) {
+            for (int i = operationInfo.otherSI().start(); i < operationInfo.otherSI().end(); i++) {
+                if (operationInfo.otherSI().screenHandler().slots.get(i).getStack().getItem() == search[j].getItem()) {
                     slots[j++] = i;
                     break;
                 }
@@ -92,16 +92,16 @@ public class InvTweaksVanillaMerchantBehavior extends InvTweaksVanillaGenericBeh
     }
 
     private void prepareNewTrade(InvTweaksOperationInfo operationInfo, int[] fromSlots) {
-        ScreenInventory cbi = operationInfo.clickedInventoryBoundInfo;
-        ScreenInventory obi = operationInfo.otherInventoryBoundInfo;
+        ScreenInventory cbi = operationInfo.clickedSI();
+        ScreenInventory obi = operationInfo.otherSI();
 
         for (int i = 0; i < fromSlots.length; i++)
             moveToSlot(cbi.screenHandler(), cbi.end(), fromSlots[i], cbi.start() +i, obi.screenHandler().slots.get(fromSlots[i]).getStack().getCount() , false);
     }
 
     private void takeTrade(InvTweaksOperationInfo operationInfo) {
-        ScreenInventory cbi = operationInfo.clickedInventoryBoundInfo;
-        ScreenInventory obi = operationInfo.otherInventoryBoundInfo;
+        ScreenInventory cbi = operationInfo.clickedSI();
+        ScreenInventory obi = operationInfo.otherSI();
 
         moveToInventory(cbi.screenHandler(), VILLAGER_OUTPUT_SLOT, obi, cbi.screenHandler().slots.get(VILLAGER_OUTPUT_SLOT).getStack().getCount(), false);
     }
