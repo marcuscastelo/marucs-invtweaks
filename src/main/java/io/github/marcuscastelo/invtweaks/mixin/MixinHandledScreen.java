@@ -148,42 +148,38 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         ScreenInventory clickedSI;
         ScreenInventory otherSI;
 
-        boolean clickedInventoryIsPlayer;
+        boolean allowOverflow = pressedButton == 1;
+
         //Depending on the index of the clicked slot, determine the clicked inventory
         if (slot.id < containerInvSize) {
             clickedSI = containerSI;
-            otherSI = playerMainSI;
-            clickedInventoryIsPlayer = false;
+            otherSI = allowOverflow ? playerCombinedSI : playerMainSI;
         } else if (slot.id < containerInvSize+playerInvSize){
             clickedSI = playerMainSI;
             otherSI = containerSI;
-            clickedInventoryIsPlayer = true;
         } else {
             clickedSI = hotbarSI;
             otherSI = containerSI;
-            clickedInventoryIsPlayer = true;
         }
 
-        //TODO: make this generic instead of hardcoded:
         if (handler instanceof PlayerScreenHandler) {
-            if (isKeyPressed(GLFW.GLFW_KEY_W)) {
-                if (clickedSI.equals(playerMainSI)) otherSI = containerSI;
-                else if (clickedSI.equals(hotbarSI)) otherSI = playerMainSI;
-                else if (clickedSI.equals(containerSI)) otherSI = hotbarSI;
+            if (clickedSI.equals(hotbarSI)) {
+                otherSI = playerMainSI;
             }
-            else if (isKeyPressed(GLFW.GLFW_KEY_S)) {
-                if (clickedSI.equals(containerSI)) otherSI = playerMainSI;
-                else if (clickedSI.equals(playerMainSI)) otherSI = hotbarSI;
-                else if (clickedSI.equals(hotbarSI)) otherSI = containerSI;
+            else if (clickedSI.equals(playerMainSI)) {
+                otherSI = hotbarSI;
             }
-            else {
-                if (clickedSI.equals(hotbarSI)) {
-                    otherSI = playerMainSI;
-                }
-                else if (clickedSI.equals(playerMainSI)) {
-                    otherSI = hotbarSI;
-                }
-            }
+        }
+
+        if (isKeyPressed(GLFW.GLFW_KEY_W)) {
+            if (clickedSI.equals(playerMainSI)) otherSI = containerSI;
+            else if (clickedSI.equals(hotbarSI)) otherSI = allowOverflow ? playerCombinedSI : playerMainSI;
+            else if (clickedSI.equals(containerSI)) otherSI = hotbarSI;
+        }
+        else if (isKeyPressed(GLFW.GLFW_KEY_S)) {
+            if (clickedSI.equals(containerSI)) otherSI = allowOverflow ? playerCombinedSI : playerMainSI;
+            else if (clickedSI.equals(playerMainSI)) otherSI = hotbarSI;
+            else if (clickedSI.equals(hotbarSI)) otherSI = containerSI;
         }
 
         InvTweaksOperationType operationType = getOperationType(pressedButton);
@@ -202,8 +198,6 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
             warnPlayer("Clicked slot: " + slot);
             warnPlayer("Clicked inventory: " + clickedSI);
             warnPlayer("Other inventory: " + otherSI);
-            warnPlayer("Clicked inventory is player: " + clickedInventoryIsPlayer);
-            warnPlayer("Other inventory is player: " + !clickedInventoryIsPlayer);
             warnPlayer("Screen specs: " + screenSpecs);
             warnPlayer("Handler: " + handler);
         }
