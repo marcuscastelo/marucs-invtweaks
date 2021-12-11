@@ -2,7 +2,7 @@ package io.github.marcuscastelo.invtweaks.mixin;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationType;
-import io.github.marcuscastelo.invtweaks.InvtweaksConfig;
+import io.github.marcuscastelo.invtweaks.config.InvtweaksConfig;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventories;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry;

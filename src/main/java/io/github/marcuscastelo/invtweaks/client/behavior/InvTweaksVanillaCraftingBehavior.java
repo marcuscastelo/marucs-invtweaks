@@ -244,7 +244,7 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
 
         InvtweaksScreenController screenController = new InvtweaksScreenController(gridSI.screenHandler());
 //        screenController.craftAll(RESULT_SLOT);
-//        replenishRecipe(gridSI, playerMainSI, currentRecipeStacks);
+        replenishRecipe(gridSI, playerMainSI, currentRecipeStacks);
     }
 
     @Override

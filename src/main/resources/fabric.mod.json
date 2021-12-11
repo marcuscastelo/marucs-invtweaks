@@ -22,7 +22,7 @@
       "io.github.marcuscastelo.invtweaks.InvTweaksMod"
     ],
     "modmenu": [
-      "io.github.marcuscastelo.invtweaks.InvtweaksModMenuIntegration"
+      "io.github.marcuscastelo.invtweaks.config.InvtweaksModMenuIntegration"
     ]
   },
   "mixins": [

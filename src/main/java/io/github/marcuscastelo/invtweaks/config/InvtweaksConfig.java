@@ -1,4 +1,4 @@
-package io.github.marcuscastelo.invtweaks;
+package io.github.marcuscastelo.invtweaks.config;
 
 public class InvtweaksConfig {
     public enum OverflowMode
