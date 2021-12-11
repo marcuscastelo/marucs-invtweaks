@@ -42,6 +42,10 @@ public class InvtweaksScreenController {
         leftClick(slot, SlotActionType.PICKUP);
     }
 
+    public void craftAll(int resultSlot) {
+        click(resultSlot, 0, SlotActionType.QUICK_MOVE);
+    }
+
     public void placeSome(int slot, int quantity) {
         //TODO: if quantity == heldStack.getCount() then we can just place the stack
         for (int i = 0; i < quantity; i ++) {

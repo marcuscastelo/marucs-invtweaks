@@ -3,9 +3,12 @@ package io.github.marcuscastelo.invtweaks.client.behavior;
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import io.github.marcuscastelo.invtweaks.util.InvtweaksScreenController;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
+import net.minecraft.text.LiteralText;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -177,36 +180,99 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
 
     @Override
     public void dropAll(InvTweaksOperationInfo operationInfo) {
+        super.dropAll(operationInfo);
+    }
 
+    private void warnPlayer(String message) {
+        MinecraftClient.getInstance().player.sendMessage(new LiteralText(message), false);
+    }
+
+    private int searchForItem(ScreenInventory inventory, Item item) {
+        InvtweaksScreenController screenController = new InvtweaksScreenController(inventory.screenHandler());
+        for (int i = 0; i < inventory.getSize(); i++) {
+            ItemStack stack = screenController.getStack(i);
+            if (stack.getItem() == item) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void replenishRecipe(ScreenInventory gridSI, ScreenInventory playerMainSI, ItemStack[] recipeStacks) {
+        ScreenHandler handler = gridSI.screenHandler();
+        InvtweaksScreenController screenController = new InvtweaksScreenController(handler);
+
+        int gridStart = gridSI.start();
+        for (int i = 0; i < recipeStacks.length; i++) {
+            ItemStack recipeStack = recipeStacks[i];
+            int currentSlot = gridStart + i;
+            ItemStack currentStack = screenController.getStack(currentSlot);
+            if (currentStack.isEmpty() || true) {
+                int playerMainSlot = searchForItem(playerMainSI, recipeStack.getItem());
+                if (playerMainSlot == -1) {
+                    warnPlayer("Could not find item " + recipeStack.getItem().getName());
+                    return;
+                }
+
+                screenController.pickStack(playerMainSlot);
+                screenController.placeOne(currentSlot);
+                screenController.placeStack(playerMainSlot);
+            }
+        }
     }
 
     @Override
     public void moveAllSameType(InvTweaksOperationInfo operationInfo) {
+        //TODO: implement this
+        final int RESULT_SLOT = 0;
+        if (operationInfo.clickedSlot().id != RESULT_SLOT) {
+            super.moveAllSameType(operationInfo);
+            return;
+        }
 
+        ItemStack resultStack = operationInfo.clickedSI().screenHandler().slots.get(RESULT_SLOT).getStack();
+        if (resultStack.isEmpty()) {
+            return;
+        }
+
+        ScreenInventory craftingSI = operationInfo.clickedSI();
+        CraftingSubScreenInvs subScreenInvs = getCraftingSubScreenInvs(craftingSI);
+
+        ScreenInventory gridSI = subScreenInvs.gridSI;
+        ScreenInventory playerMainSI = operationInfo.otherSI();
+        ItemStack[] currentRecipeStacks = getCurrentRecipeStacks(gridSI);
+
+        InvtweaksScreenController screenController = new InvtweaksScreenController(gridSI.screenHandler());
+//        screenController.craftAll(RESULT_SLOT);
+//        replenishRecipe(gridSI, playerMainSI, currentRecipeStacks);
     }
 
     @Override
     public void dropAllSameType(InvTweaksOperationInfo operationInfo) {
-
+        final int RESULT_SLOT = 0;
+        if (operationInfo.clickedSlot().id != RESULT_SLOT) {
+            super.moveAllSameType(operationInfo);
+            return;
+        }
     }
 
     @Override
     public void moveOne(InvTweaksOperationInfo operationInfo) {
-
+        super.moveOne(operationInfo);
     }
 
     @Override
     public void dropOne(InvTweaksOperationInfo operationInfo) {
-
+        super.dropOne(operationInfo);
     }
 
     @Override
     public void moveStack(InvTweaksOperationInfo operationInfo) {
-
+        super.moveStack(operationInfo);
     }
 
     @Override
     public void dropStack(InvTweaksOperationInfo operationInfo) {
-
+        super.dropStack(operationInfo);
     }
 }

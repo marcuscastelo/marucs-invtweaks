@@ -11,6 +11,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.screen.CraftingScreenHandler;
 import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.CraftingResultSlot;
@@ -137,7 +138,14 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         //We do not handle pickup all, so we can just call the original method
         if (!isSlotActionTypeSupported(actionType)) return;
 
-        if (slot instanceof CraftingResultSlot) return;
+        if (slot instanceof CraftingResultSlot)
+        {
+            if (!(this.handler instanceof CraftingScreenHandler))
+            {
+                warnPlayer("Please tell Marucs that there are CraftingResultSlot in a non-crafting screen handler");
+                warnPlayer("Current handler: " + this.handler.getClass().getName());
+            }
+        }
 
         if (!isScreenSupported()) {
             warnPlayer("This screen is not supported by Marucs' InvTweaks");
