@@ -14,8 +14,6 @@ public class InvtweaksScreenController {
     private final ClientPlayerInteractionManager interaction;
     private final ClientPlayerEntity player;
 
-    private ItemStack heldStack = ItemStack.EMPTY;
-
     public InvtweaksScreenController(ScreenHandler handler) {
         this.handler = handler;
         this.interaction = MinecraftClient.getInstance().interactionManager;
@@ -25,20 +23,26 @@ public class InvtweaksScreenController {
     }
 
     public boolean isHoldingStack() {
-        return !heldStack.isEmpty();
+        return !getHeldStack().isEmpty();
     }
 
     public ItemStack getHeldStack() {
-        return heldStack.copy();
+        return handler.getCursorStack();
     }
 
     public void pickStack(int slot) {
-        if (!heldStack.isEmpty()) return;
+        if (!getHeldStack().isEmpty()) {
+            System.err.println("[InvTweaks] Cannot pick stack, there is already a stack in hand!");
+            return;
+        }
         leftClick(slot, SlotActionType.PICKUP);
     }
 
     public void placeStack(int slot) {
-        if (heldStack.isEmpty()) return;
+        if (getHeldStack().isEmpty()) {
+            System.err.println("[InvTweaks] Cannot place stack, there is no stack in hand!");
+            return;
+        }
         leftClick(slot, SlotActionType.PICKUP);
     }
 
@@ -47,14 +51,17 @@ public class InvtweaksScreenController {
     }
 
     public void placeSome(int slot, int quantity) {
-        //TODO: if quantity == heldStack.getCount() then we can just place the stack
+        //TODO: if quantity == getHeldStack().getCount() then we can just place the stack
         for (int i = 0; i < quantity; i ++) {
             placeOne(slot);
         }
     }
 
     public void placeOne(int slot) {
-        if (heldStack.isEmpty()) return;
+        if (getHeldStack().isEmpty()) {
+            System.err.println("[InvTweaks] Cannot place stack, there is no stack in hand!");
+            return;
+        }
         rightClick(slot, SlotActionType.PICKUP);
     }
 
@@ -85,12 +92,22 @@ public class InvtweaksScreenController {
         pickStack(from);
         placeSome(to, quantity);
 
-        if (!heldStack.isEmpty())
+        if (!getHeldStack().isEmpty())
             placeStack(from);
     }
 
+    public void dropOne(int slot) {
+        if (isEmpty(slot)) return;
+        rightClick(slot, SlotActionType.THROW);
+    }
+
+    public void dropAll(int slot) {
+        if (isEmpty(slot)) return;
+        leftClick(slot, SlotActionType.THROW);
+    }
+
     public boolean isEmpty(int slot) {
-        return getItem(slot) == Items.AIR;
+        return getStack(slot).isEmpty();
     }
 
     public Item getItem(int slot) {
@@ -111,7 +128,7 @@ public class InvtweaksScreenController {
 
     private void click(int slot, int mouseButton, SlotActionType actionType) {
         interaction.clickSlot(handler.syncId, slot, mouseButton, actionType, player);
-        heldStack = handler.getCursorStack();
+        handler.onSlotClick(slot, mouseButton, actionType, player);
     }
 
 }
