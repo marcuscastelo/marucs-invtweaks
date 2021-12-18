@@ -2,7 +2,13 @@ package io.github.marcuscastelo.invtweaks.client.behavior;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.screen.ScreenHandler;
+import net.minecraft.screen.slot.Slot;
+import net.minecraft.screen.slot.SlotActionType;
 
 public class InvTweaksVanillaPlayerBehaviour extends InvTweaksVanillaGenericBehavior {
     @Override
@@ -53,5 +59,38 @@ public class InvTweaksVanillaPlayerBehaviour extends InvTweaksVanillaGenericBeha
     @Override
     public void dropStack(InvTweaksOperationInfo operationInfo) {
         super.dropStack(operationInfo);
+    }
+
+    boolean isMoveableToArmor(InvTweaksOperationInfo operationInfo, ItemStack itemStack) {
+        ScreenHandler screenHandler = operationInfo.clickedSI().screenHandler();
+        ScreenInventory armorInv = new ScreenInventory(screenHandler, 1, 4);
+
+        boolean moveableToArmorInv = false;
+        for (int slotId = armorInv.start(); slotId <= armorInv.end(); slotId++) {
+            Slot slot = screenHandler.getSlot(slotId);
+            if (screenHandler.canInsertIntoSlot(itemStack, slot))
+            {
+                moveableToArmorInv = true;
+                break;
+            }
+        }
+
+        return moveableToArmorInv;
+    }
+
+    @Override
+    public void moveStack(InvTweaksOperationInfo operationInfo) {
+        ItemStack itemStack = operationInfo.clickedSlot().getStack();
+
+        ScreenHandler screenHandler = operationInfo.clickedSI().screenHandler();
+        //Keep the same behavior for armor
+        if (isMoveableToArmor(operationInfo, itemStack)) {
+            int clickedSlotId = operationInfo.clickedSlot().id;
+            MinecraftClient.getInstance().interactionManager.clickSlot(screenHandler.syncId, clickedSlotId, 0, SlotActionType.QUICK_MOVE, MinecraftClient.getInstance().player);
+            return; //Minecraft default behavior
+        }
+        else {
+            super.moveStack(operationInfo);
+        }
     }
 }

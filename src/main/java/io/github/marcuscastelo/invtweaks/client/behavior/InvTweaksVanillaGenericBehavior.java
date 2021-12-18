@@ -124,6 +124,18 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
         return moveToSlot(handler, destinationStart+inventorySize-1, fromSlot, destinationStart, quantity, sorting);
     }
 
+    protected Comparator<Item> getSortingComparator() {
+        return Comparator.comparing(
+                item -> {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(item.getGroup() != null ? item.getGroup().getName() : "");
+                    sb.append(item.getName());
+                    sb.append(item.getMaxCount());
+                    return sb.toString();
+                }
+        );
+    }
+
     @Override
     public void sort(InvTweaksOperationInfo operationInfo) {
         ScreenHandler handler = operationInfo.clickedSI().screenHandler();
@@ -140,7 +152,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
             items.add(item);
         }
         List<Item> itemsArray = new ArrayList<>(items);
-        itemsArray.sort(Comparator.comparing(item -> item.getName().toString()));
+        itemsArray.sort(getSortingComparator());
 
         int destinationSlot = startSlot;
         for (Item item : itemsArray) {
