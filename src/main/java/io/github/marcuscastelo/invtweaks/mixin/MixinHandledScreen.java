@@ -17,7 +17,7 @@ import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.CraftingResultSlot;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.LiteralTextContent;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -42,7 +42,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
     private boolean isBypassActive() { return _middleClickBypass; }
 
     private boolean isTryingToCloneItem(int button) {
-        boolean isCloneBtn = MinecraftClient.getInstance().options.keyPickItem.matchesMouse(button);
+        boolean isCloneBtn = MinecraftClient.getInstance().options.pickItemKey.matchesMouse(button);
         boolean isInCreative = MinecraftClient.getInstance().interactionManager.hasCreativeInventory();
 
         return isCloneBtn && isInCreative;
@@ -99,7 +99,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
 
     private void warnPlayer(String message) {
         ClientPlayerEntity player = MinecraftClient.getInstance().player;
-        player.sendMessage(new LiteralText(message), false);
+        player.sendMessage(new LiteralTextContent(message), false);
     }
 
     private boolean isOverflowAllowed(int button) {
