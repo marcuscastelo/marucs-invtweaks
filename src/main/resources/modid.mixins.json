@@ -7,7 +7,8 @@
   ],
   "client": [
     "MixinHandledScreen",
-    "MixinMerchantScreenHandler"
+    "MixinMerchantScreenHandler",
+    "MixinMobEntity"
   ],
   "injectors": {
     "defaultRequire": 1
