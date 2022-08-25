@@ -9,7 +9,6 @@ import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.screen.CraftingScreenHandler;
 import net.minecraft.screen.PlayerScreenHandler;
@@ -17,8 +16,6 @@ import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.CraftingResultSlot;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.text.LiteralTextContent;
-import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -27,6 +24,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import static io.github.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer;
 
 @Mixin(HandledScreen.class)
 public abstract class MixinHandledScreen<T extends ScreenHandler>{
@@ -84,7 +83,6 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
     @Inject(method = "mouseClicked", at=@At("HEAD"), cancellable = true)
     protected void mouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir)
     {
-        System.out.println("Mouse clicked: " + button);
         //mouseClicked is called before onMouseClick
         //we use this to bypass the middle click filter
         bypassMiddleClickBarrier(mouseX, mouseY, button, cir);
@@ -98,10 +96,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         return InvTweaksBehaviorRegistry.isScreenSupported(this.handler.getClass());
     }
 
-    private void warnPlayer(String message) {
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
-        player.sendMessage(Text.literal(message), false);
-    }
+
 
     private boolean isOverflowAllowed(int button) {
         return switch (InvtweaksConfig.getOverflowMode()) {
@@ -122,19 +117,26 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         };
     }
 
+    private void debugPrintScreenHandlerInfo(ScreenInventories invs) {
+        warnPlayer(handler.getClass().getName());
+        warnPlayer("Inventories:");
+        warnPlayer("\tHotbar: "+invs.playerHotbarSI);
+        warnPlayer("\tMain: "+invs.playerMainSI);
+        warnPlayer("\tCrafting: "+invs.craftingSI);
+        warnPlayer("\tExternal: "+invs.externalSI);
+    }
+
     @Inject(method = "onMouseClick(Lnet/minecraft/screen/slot/Slot;IILnet/minecraft/screen/slot/SlotActionType;)V", at = @At("HEAD"), cancellable = true)
     protected void onMouseClick(Slot slot, int invSlot, int pressedButton, SlotActionType actionType, CallbackInfo ci) {
         //In case of clicking outside of inventory, just ignore
         if (slot == null) return;
         if (pressedButton != 0 && pressedButton != 1 && pressedButton != 2) return; //Only left, right and middle clicks are handled
-
+//        if (1==1) return;
         //Bypass the middle click filter, so that we can handle the middle click
         if (isBypassActive()) {
             pressedButton = MIDDLE_CLICK;
             actionType = SlotActionType.CLONE;
         }
-
-        System.out.println("Is cursor dragging: " + this.cursorDragging);
 
         //We do not handle pickup all, so we can just call the original method
         if (!isSlotActionTypeSupported(actionType)) return;
@@ -154,6 +156,12 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         }
 
         ScreenInventories screenInvs = new ScreenInventories(this.handler);
+
+        if (isKeyPressed(GLFW.GLFW_KEY_F1)) {
+            debugPrintScreenHandlerInfo(screenInvs);
+        } else if (isKeyPressed(GLFW.GLFW_KEY_F2)) {
+            warnPlayer("Current slot = " + slot + ", id = " + slot.id);
+        }
 
         //TODO: make this generic instead of hardcoded:
         if (handler.getClass().equals(PlayerScreenHandler.class)) {
@@ -185,7 +193,8 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         ci.cancel();
     }
 
-    private boolean isKeyPressed(int key) {
+
+    private static boolean isKeyPressed(int key) {
         return InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), key);
     }
 

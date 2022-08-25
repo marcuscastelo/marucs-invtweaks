@@ -2,6 +2,7 @@ package io.github.marcuscastelo.invtweaks.inventory;
 
 import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
 import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry;
+import io.github.marcuscastelo.invtweaks.util.ChatUtils;
 import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.ScreenHandler;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +16,8 @@ public class ScreenInventories {
 
     //TODO: support more than one external inventory
     public final Optional<ScreenInventory> externalSI;
+
+    public final Optional<ScreenInventory> craftingSI;
 
     public ScreenInventories(@NotNull ScreenHandler handler) {
         ScreenSpecification screenSpecification = InvTweaksBehaviorRegistry.getScreenSpecs(handler.getClass());
@@ -31,7 +34,9 @@ public class ScreenInventories {
         //TODO: make this generic instead of hardcoded:
         if (handler.getClass().equals(PlayerScreenHandler.class)) {
             externalInventorySize = 9;
-        }
+            craftingSI = Optional.of(new ScreenInventory(handler, 1, 4));
+        } else
+            craftingSI = Optional.empty();
 
         if (externalInventorySize > 0)
             externalSI = Optional.of(new ScreenInventory(handler, 0, externalInventorySize - 1));
@@ -61,32 +66,56 @@ public class ScreenInventories {
         return clickedInventory;
     }
 
-    public ScreenInventory getOppositeInventory(ScreenInventory clickedSI, boolean allowCombined) {
-        boolean isPlayerScreen = clickedSI.screenHandler() instanceof PlayerScreenHandler;
+    public ScreenInventory getOppositeInventory(ScreenInventory initialSI, boolean allowCombined) {
+        boolean playerScreen = isPlayerScreen(initialSI);
 
-        if (clickedSI == playerMainSI) return isPlayerScreen ? playerHotbarSI : externalSI.orElse(playerHotbarSI);
-        else if (clickedSI == playerHotbarSI) return isPlayerScreen ? playerMainSI : externalSI.orElse(playerMainSI);
-        else if (clickedSI == externalSI.orElse(null)) return allowCombined ? playerCombinedSI : playerMainSI;
+        if (initialSI == playerMainSI)
+            return playerScreen ? playerHotbarSI : externalSI.orElse(playerHotbarSI);
+        else if (initialSI == playerHotbarSI)
+            return playerScreen ? playerMainSI : externalSI.orElse(playerMainSI);
+        else if (initialSI == externalSI.orElse(null))
+            return allowCombined ? playerCombinedSI : playerMainSI;
         else {
-            throw new IllegalArgumentException("Unknown inventory");
+            ChatUtils.warnPlayer("getOppositeInventory() - Unkown ScreenInventory: " + initialSI);
+            return initialSI;
         }
+
     }
 
     public ScreenInventory getInventoryUpwards(ScreenInventory initialSI, boolean allowCombined) {
-        if (initialSI == playerMainSI) return externalSI.orElse(playerHotbarSI);
-        else if (initialSI == playerHotbarSI) return playerMainSI;
-        else if (initialSI == externalSI.orElse(null)) return allowCombined ? playerCombinedSI : playerHotbarSI;
+        boolean playerScreen = isPlayerScreen(initialSI);
+        ChatUtils.warnPlayer("getInventoryUpwards");
+        ChatUtils.warnPlayer("playerScreen: " + playerScreen);
+        ChatUtils.warnPlayer("initialSI: " + initialSI);
+        ChatUtils.warnPlayer("craftingSI: " + craftingSI);
+        ChatUtils.warnPlayer("playerMainSI: " + playerMainSI);
+        ChatUtils.warnPlayer("playerHotbarSI: " + playerHotbarSI);
+        if (initialSI == playerMainSI)
+            return craftingSI.orElseThrow();
+//            return playerScreen ? craftingSI.orElse(playerHotbarSI) : externalSI.orElse(playerHotbarSI);
+        else if (initialSI == playerHotbarSI)
+            return playerMainSI;
+        else if (initialSI == externalSI.orElse(null))
+            return allowCombined ? playerCombinedSI : playerHotbarSI;
         else {
-            throw new IllegalArgumentException("Unknown inventory");
+            ChatUtils.warnPlayer("getInventoryUpwards() - Unkown ScreenInventory: " + initialSI);
+            return initialSI;
+
         }
     }
 
     public ScreenInventory getInventoryDownwards(ScreenInventory initialSI, boolean allowCombined) {
-        if (initialSI == playerMainSI) return playerHotbarSI;
-        else if (initialSI == playerHotbarSI) return externalSI.orElse(null);
-        else if (initialSI == externalSI.orElse(null)) return allowCombined ? playerCombinedSI : playerMainSI;
+        if (initialSI == playerMainSI)
+            return playerHotbarSI;
+        else if (initialSI == playerHotbarSI)
+            return externalSI.orElse(null);
+        else if (initialSI == externalSI.orElse(null))
+            return allowCombined ? playerCombinedSI : playerMainSI;
         else {
-            throw new IllegalArgumentException("Unknown inventory");
+            ChatUtils.warnPlayer("getInventoryDownwards() - Unkown ScreenInventory: " + initialSI);
+            return initialSI;
         }
     }
+
+    private static boolean isPlayerScreen(ScreenInventory si) { return si.screenHandler() instanceof PlayerScreenHandler; }
 }

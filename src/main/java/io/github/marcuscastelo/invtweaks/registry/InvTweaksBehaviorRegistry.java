@@ -72,8 +72,14 @@ public class InvTweaksBehaviorRegistry {
         register(buildVanillaGeneric(GrindstoneScreenHandler.class));
         register(buildVanillaGeneric(HorseScreenHandler.class));
 
-        ScreenInventoriesSpecification playerScreenInvSpecs = new ScreenInventoriesSpecification(false, 27, 9);
-        register(createSpecsBuilder(PlayerScreenHandler.class).withBehavior(new InvTweaksVanillaPlayerBehaviour()).withInventoriesSpecification(playerScreenInvSpecs).build());
+        ScreenInventoriesSpecification playerScreenInvSpecs = new ScreenInventoriesSpecification(true, 27, 9);
+
+        register(
+                createSpecsBuilder(PlayerScreenHandler.class)
+                        .withBehavior(new InvTweaksVanillaPlayerBehaviour())
+                        .withInventoriesSpecification(playerScreenInvSpecs)
+                        .build()
+        );
 
 
         //Merchant behaviour
