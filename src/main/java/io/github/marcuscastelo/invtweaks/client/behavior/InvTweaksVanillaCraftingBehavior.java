@@ -1,8 +1,6 @@
 package io.github.marcuscastelo.invtweaks.client.behavior;
 
-import ;
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
-import io.github.marcuscastelo.invtweaks.client.behavior.InvTweaksVanillaCraftingBehavior.CraftingSubScreenInvs;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import io.github.marcuscastelo.invtweaks.util.InvtweaksScreenController;
 import net.minecraft.client.MinecraftClient;
@@ -11,6 +9,8 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.text.LiteralTextContent;
+import net.minecraft.text.Text;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -186,7 +186,7 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
     }
 
     private void warnPlayer(String message) {
-        MinecraftClient.getInstance().player.sendMessage(new LiteralTextContent(message), false);
+        MinecraftClient.getInstance().player.sendMessage(Text.literal(message), false);
     }
 
     private int searchForItem(ScreenInventory inventory, Item item) {

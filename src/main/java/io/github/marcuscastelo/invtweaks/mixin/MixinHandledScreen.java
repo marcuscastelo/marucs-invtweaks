@@ -18,6 +18,7 @@ import net.minecraft.screen.slot.CraftingResultSlot;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.LiteralTextContent;
+import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -99,7 +100,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
 
     private void warnPlayer(String message) {
         ClientPlayerEntity player = MinecraftClient.getInstance().player;
-        player.sendMessage(new LiteralTextContent(message), false);
+        player.sendMessage(Text.literal(message), false);
     }
 
     private boolean isOverflowAllowed(int button) {
