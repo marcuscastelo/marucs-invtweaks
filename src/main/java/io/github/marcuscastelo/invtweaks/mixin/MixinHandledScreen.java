@@ -9,11 +9,7 @@ import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.screen.CraftingScreenHandler;
-import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.CraftingResultSlot;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import org.lwjgl.glfw.GLFW;
@@ -26,6 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import static io.github.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer;
+import static io.github.marcuscastelo.invtweaks.util.KeyUtils.isKeyPressed;
 
 @Mixin(HandledScreen.class)
 public abstract class MixinHandledScreen<T extends ScreenHandler>{
@@ -123,7 +120,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         warnPlayer("\tHotbar: "+invs.playerHotbarSI);
         warnPlayer("\tMain: "+invs.playerMainSI);
         warnPlayer("\tCrafting: "+invs.craftingSI);
-        warnPlayer("\tExternal: "+invs.externalSI);
+        warnPlayer("\tExternal: "+invs.storageSI);
     }
 
     @Inject(method = "onMouseClick(Lnet/minecraft/screen/slot/Slot;IILnet/minecraft/screen/slot/SlotActionType;)V", at = @At("HEAD"), cancellable = true)
@@ -141,15 +138,6 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         //We do not handle pickup all, so we can just call the original method
         if (!isSlotActionTypeSupported(actionType)) return;
 
-        if (slot instanceof CraftingResultSlot)
-        {
-            if (!(this.handler instanceof CraftingScreenHandler))
-            {
-                warnPlayer("Please tell Marucs that there are CraftingResultSlot in a non-crafting screen handler");
-                warnPlayer("Current handler: " + this.handler.getClass().getName());
-            }
-        }
-
         if (!isScreenSupported()) {
             warnPlayer("This screen is not supported by Marucs' InvTweaks");
             return;
@@ -157,26 +145,24 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
 
         ScreenInventories screenInvs = new ScreenInventories(this.handler);
 
+
+        ScreenInventory clickedSI = screenInvs.getClickedInventory(slot.id);
+        ScreenInventory targetSI = getTargetInventory(clickedSI, screenInvs, isOverflowAllowed(pressedButton));
+
         if (isKeyPressed(GLFW.GLFW_KEY_F1)) {
             debugPrintScreenHandlerInfo(screenInvs);
         } else if (isKeyPressed(GLFW.GLFW_KEY_F2)) {
             warnPlayer("Current slot = " + slot + ", id = " + slot.id);
+            warnPlayer("Clicked SI = " + clickedSI);
+            warnPlayer("Target SI = " + targetSI);
         }
-
-        //TODO: make this generic instead of hardcoded:
-        if (handler.getClass().equals(PlayerScreenHandler.class)) {
-            if (invSlot >= 5 && invSlot < 9) return;
-        }
-
-        ScreenInventory clickedSI = screenInvs.getClickedInventory(slot.id);
-        ScreenInventory targetSI = getTargetInventory(clickedSI, screenInvs, isOverflowAllowed(pressedButton));
 
         InvTweaksOperationType operationType = getOperationType(pressedButton);
 
         if (operationType == InvTweaksOperationType.NONE)
             return; //Use vanilla behavior for these operations
 
-        InvTweaksOperationInfo operationInfo = new InvTweaksOperationInfo(operationType, slot, clickedSI, targetSI);
+        InvTweaksOperationInfo operationInfo = new InvTweaksOperationInfo(operationType, slot, clickedSI, targetSI, screenInvs);
 
         try {
             InvTweaksBehaviorRegistry.executeOperation(handler.getClass(), operationInfo);
@@ -193,10 +179,6 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         ci.cancel();
     }
 
-
-    private static boolean isKeyPressed(int key) {
-        return InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), key);
-    }
 
     private boolean assertOnlyOneBool(boolean... booleans) {
         int count = 0;

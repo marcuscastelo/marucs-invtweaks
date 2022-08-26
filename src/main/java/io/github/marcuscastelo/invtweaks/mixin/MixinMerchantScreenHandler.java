@@ -13,6 +13,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import static net.minecraft.client.util.InputUtil.isKeyPressed;
+
 @Mixin(MerchantScreenHandler.class)
 public abstract class MixinMerchantScreenHandler extends ScreenHandler {
     protected MixinMerchantScreenHandler(ScreenHandlerType<?> type, int syncId) {
@@ -21,7 +23,7 @@ public abstract class MixinMerchantScreenHandler extends ScreenHandler {
 
     @Inject(method = "autofill", at = @At("HEAD"), cancellable = true)
     private void autofill(int slot, ItemStack stack, CallbackInfo ci) {
-        if (InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_SPACE))
+        if (isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_SPACE))
             ci.cancel();
     }
 }

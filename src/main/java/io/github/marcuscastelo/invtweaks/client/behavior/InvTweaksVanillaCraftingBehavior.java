@@ -4,11 +4,9 @@ import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import io.github.marcuscastelo.invtweaks.util.InvtweaksScreenController;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.text.LiteralTextContent;
 import net.minecraft.text.Text;
 
 import java.util.HashMap;
@@ -163,16 +161,21 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
 
     @Override
     public void sort(InvTweaksOperationInfo operationInfo) {
-        if (!isCraftingInv(operationInfo.clickedSI())) {
-            super.sort(operationInfo);
-            return;
+//        if (!isCraftingInv(operationInfo.clickedSI())) {
+//            super.sort(operationInfo);
+//            return;
+//        }
+//
+//        ScreenInventory craftingSI = operationInfo.clickedSI();
+//        CraftingSubScreenInvs subScreenInvs = getCraftingSubScreenInvs(craftingSI);
+//        ScreenInventory craftingGridSI = subScreenInvs.gridSI;
+//
+//        spreadItemsInPlace(craftingGridSI);
+
+        if (operationInfo.clickedSI() == operationInfo.otherInventories().craftingSI.orElse(null)) {
+            warnPlayer("Toppp");
         }
 
-        ScreenInventory craftingSI = operationInfo.clickedSI();
-        CraftingSubScreenInvs subScreenInvs = getCraftingSubScreenInvs(craftingSI);
-        ScreenInventory craftingGridSI = subScreenInvs.gridSI;
-
-        spreadItemsInPlace(craftingGridSI);
     }
 
     @Override
@@ -249,7 +252,7 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
         CraftingSubScreenInvs subScreenInvs = getCraftingSubScreenInvs(craftingSI);
 
         ScreenInventory gridSI = subScreenInvs.gridSI;
-        ScreenInventory playerMainSI = operationInfo.otherSI();
+        ScreenInventory playerMainSI = operationInfo.targetSI();
         ItemStack[] currentRecipeStacks = getCurrentRecipeStacks(gridSI);
 
         InvtweaksScreenController screenController = new InvtweaksScreenController(gridSI.screenHandler());

@@ -181,7 +181,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
         for (int slotId = operationInfo.clickedSI().start(); slotId <= operationInfo.clickedSI().end(); slotId++) {
             ItemStack stack = operationInfo.clickedSI().screenHandler().getSlot(slotId).getStack();
             if (stack.getItem() == Items.AIR) continue;
-            int result = moveToInventory(operationInfo.clickedSI().screenHandler(), slotId, operationInfo.otherSI(), stack.getCount(), false);
+            int result = moveToInventory(operationInfo.clickedSI().screenHandler(), slotId, operationInfo.targetSI(), stack.getCount(), false);
             if (result == MOVERESULT_FULL) break;
         }
     }
@@ -201,7 +201,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
             ItemStack stack = operationInfo.clickedSI().screenHandler().slots.get(slot).getStack();
             if (stack.getItem() != itemType) continue;
 
-            int result = moveToInventory(operationInfo.clickedSI().screenHandler(), slot, operationInfo.otherSI(), stack.getCount(), false);
+            int result = moveToInventory(operationInfo.clickedSI().screenHandler(), slot, operationInfo.targetSI(), stack.getCount(), false);
             if (result == MOVERESULT_FULL) break;
         }
     }
@@ -221,7 +221,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
     public void moveOne(InvTweaksOperationInfo operationInfo) {
         ScreenHandler handler = operationInfo.clickedSI().screenHandler();
         int from = operationInfo.clickedSlot().id;
-        int result = moveToInventory(handler,from, operationInfo.otherSI(), 1, false);
+        int result = moveToInventory(handler,from, operationInfo.targetSI(), 1, false);
     }
 
     @Override
@@ -235,7 +235,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
         ScreenHandler handler = operationInfo.clickedSI().screenHandler();
         int from = operationInfo.clickedSlot().id;
         ItemStack stack = operationInfo.clickedSlot().getStack();
-        moveToInventory(handler,from, operationInfo.otherSI(), stack.getCount(), false);
+        moveToInventory(handler,from, operationInfo.targetSI(), stack.getCount(), false);
 
     }
 
