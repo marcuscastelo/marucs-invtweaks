@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "id": "marucs-invtweaks",
-  "version": "1.19.2-2",
+  "id": "modid",
+  "version": "${version}",
 
-  "name": "Marucs' Invtweaks",
-  "description": "All your (g)old InvTweaks features, now for Fabric.",
+  "name": "Example Mod",
+  "description": "This is an example description! Tell everyone what your mod is about!",
   "authors": [
-    "marcuscastelo"
+    "Me!"
   ],
   "contact": {
     "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/marcuscastelo/marucs-invtweaks"
+    "sources": "https://github.com/FabricMC/fabric-example-mod"
   },
 
   "license": "CC0-1.0",
@@ -19,22 +19,20 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "io.github.marcuscastelo.invtweaks.InvTweaksMod"
-    ],
-    "modmenu": [
-      "io.github.marcuscastelo.invtweaks.config.InvtweaksModMenuIntegration"
+      "net.fabricmc.example.ExampleMod"
     ]
   },
   "mixins": [
-    "marucs-invtweaks.mixins.json"
+    "modid.mixins.json"
   ],
 
   "depends": {
-    "fabricloader": ">=0.7.4",
-    "fabric": "*",
-    "minecraft": "1.19.x"
+    "fabricloader": ">=0.14.9",
+    "fabric-api": "*",
+    "minecraft": "~1.19",
+    "java": ">=17"
   },
   "suggests": {
-    "flamingo": "*"
+    "another-mod": "*"
   }
 }
