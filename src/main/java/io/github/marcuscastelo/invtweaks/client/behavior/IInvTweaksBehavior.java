@@ -1,15 +1,20 @@
 package io.github.marcuscastelo.invtweaks.client.behavior;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
+import io.github.marcuscastelo.invtweaks.OperationResult;
 
 public interface IInvTweaksBehavior {
-    void sort(InvTweaksOperationInfo operationInfo);
-    void moveAll(InvTweaksOperationInfo operationInfo);
-    void dropAll(InvTweaksOperationInfo operationInfo);
-    void moveAllSameType(InvTweaksOperationInfo operationInfo);
-    void dropAllSameType(InvTweaksOperationInfo operationInfo);
-    void moveOne(InvTweaksOperationInfo operationInfo);
-    void dropOne(InvTweaksOperationInfo operationInfo);
-    void moveStack(InvTweaksOperationInfo operationInfo);
-    void dropStack(InvTweaksOperationInfo operationInfo);
+    OperationResult sort(InvTweaksOperationInfo operationInfo);
+    OperationResult moveAll(InvTweaksOperationInfo operationInfo);
+    OperationResult dropAll(InvTweaksOperationInfo operationInfo);
+    OperationResult moveAllSameType(InvTweaksOperationInfo operationInfo);
+    OperationResult dropAllSameType(InvTweaksOperationInfo operationInfo);
+    OperationResult moveOne(InvTweaksOperationInfo operationInfo);
+    OperationResult dropOne(InvTweaksOperationInfo operationInfo);
+    OperationResult moveStack(InvTweaksOperationInfo operationInfo);
+    OperationResult dropStack(InvTweaksOperationInfo operationInfo);
+    OperationResult craftOne(InvTweaksOperationInfo operationInfo);
+    OperationResult craftStack(InvTweaksOperationInfo operationInfo);
+    OperationResult craftAll(InvTweaksOperationInfo operationInfo);
+    OperationResult craftAllSameType(InvTweaksOperationInfo operationInfo);
 }

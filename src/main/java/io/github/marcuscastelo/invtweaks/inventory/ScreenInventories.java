@@ -2,7 +2,6 @@ package io.github.marcuscastelo.invtweaks.inventory;
 
 import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
 import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry;
-import io.github.marcuscastelo.invtweaks.util.ChatUtils;
 import net.minecraft.screen.CraftingScreenHandler;
 import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.ScreenHandler;
@@ -11,9 +10,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.github.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer;

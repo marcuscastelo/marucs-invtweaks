@@ -2,6 +2,7 @@ package io.github.marcuscastelo.invtweaks.registry;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
 import io.github.marcuscastelo.invtweaks.OperationExecutor;
+import io.github.marcuscastelo.invtweaks.OperationResult;
 import io.github.marcuscastelo.invtweaks.api.ScreenInventoriesSpecification;
 import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
 import io.github.marcuscastelo.invtweaks.client.behavior.*;
@@ -24,17 +25,19 @@ public class InvTweaksBehaviorRegistry {
         return screenBehaviorMap.get(screenHandlerClass);
     }
 
-    public static void executeOperation(Class<? extends ScreenHandler> screenHandlerClass, InvTweaksOperationInfo operationInfo) throws IllegalArgumentException{
+    public static OperationResult executeOperation(Class<? extends ScreenHandler> screenHandlerClass, InvTweaksOperationInfo operationInfo) throws IllegalArgumentException{
         if (!isScreenSupported(screenHandlerClass))
             throw new IllegalArgumentException("Screen "  + screenHandlerClass + " doesn't have a behavior");
 
         IInvTweaksBehavior behavior = screenBehaviorMap.get(screenHandlerClass).getInvTweaksBehavior();
         Optional<OperationExecutor> executor = operationInfo.type().asOperationExecutor(behavior);
         if (executor.isPresent()) {
-            executor.get().execute(operationInfo);
+            return executor.get().execute(operationInfo);
         } else {
             System.out.println("Operation " + operationInfo.type() + " is not supported by " + behavior.getClass());
+            return new OperationResult(false);
         }
+
     }
 
     public static boolean isScreenSupported(Class<? extends ScreenHandler> screenHandlerClass) {
@@ -71,6 +74,7 @@ public class InvTweaksBehaviorRegistry {
         register(buildVanillaGeneric(SmithingScreenHandler.class));
         register(buildVanillaGeneric(GrindstoneScreenHandler.class));
         register(buildVanillaGeneric(HorseScreenHandler.class));
+        register(buildVanillaGeneric(StonecutterScreenHandler.class));
 
         ScreenInventoriesSpecification playerScreenInvSpecs = new ScreenInventoriesSpecification(true, 27, 9);
 

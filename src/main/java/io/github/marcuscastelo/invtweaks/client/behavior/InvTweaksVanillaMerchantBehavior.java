@@ -1,6 +1,7 @@
 package io.github.marcuscastelo.invtweaks.client.behavior;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
+import io.github.marcuscastelo.invtweaks.OperationResult;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.MathHelper;
@@ -13,15 +14,21 @@ public class InvTweaksVanillaMerchantBehavior extends InvTweaksVanillaGenericBeh
     protected static final int VILLAGER_OUTPUT_SLOT = 2;
 
     @Override
-    public void moveAll(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveAll(InvTweaksOperationInfo operationInfo) {
         System.out.println(operationInfo.clickedSlot().id);
-        if (operationInfo.clickedSlot().id != VILLAGER_OUTPUT_SLOT) { super.moveAll(operationInfo); return; }
+        if (operationInfo.clickedSlot().id != VILLAGER_OUTPUT_SLOT) {
+            return super.moveAll(operationInfo);
+        }
         tradeAll(operationInfo);
+        return new OperationResult(true);
     }
 
     @Override
-    public void dropAll(InvTweaksOperationInfo operationInfo) {
-        if (operationInfo.clickedSlot().id != VILLAGER_OUTPUT_SLOT) { super.moveAll(operationInfo); return; }
+    public OperationResult dropAll(InvTweaksOperationInfo operationInfo) {
+        if (operationInfo.clickedSlot().id != VILLAGER_OUTPUT_SLOT) {
+            return super.moveAll(operationInfo);
+        }
+        return new OperationResult(true);
     }
 
     private void tradeAll(InvTweaksOperationInfo operationInfo) {

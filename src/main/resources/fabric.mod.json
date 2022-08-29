@@ -26,7 +26,7 @@
     ]
   },
   "mixins": [
-    "marucs-elytra.mixins.json"
+    "marucs-invtweaks.mixins.json"
   ],
 
   "depends": {

@@ -128,7 +128,6 @@ public class InvtweaksScreenController {
 
     private void click(int slot, int mouseButton, SlotActionType actionType) {
         interaction.clickSlot(handler.syncId, slot, mouseButton, actionType, player);
-        handler.onSlotClick(slot, mouseButton, actionType, player);
     }
 
 }

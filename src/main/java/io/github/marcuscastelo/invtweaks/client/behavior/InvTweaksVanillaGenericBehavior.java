@@ -1,6 +1,7 @@
 package io.github.marcuscastelo.invtweaks.client.behavior;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
+import io.github.marcuscastelo.invtweaks.OperationResult;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -15,7 +16,7 @@ import net.minecraft.util.math.MathHelper;
 import java.util.*;
 
 public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
-    public final int MOVERESULT_FULL = -3;
+    public final int MOVE_RESULT_FULL = -3;
 
 
     protected int moveToSlot(ScreenHandler handler, int maxSlot, int fromSlotId, int toSlotId, int quantity, boolean sorting) {
@@ -63,7 +64,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
                     continue;
                 }
                 else {
-                    //If slot is occuppied
+                    //If slot is occupied
                     if (sorting) {
                         int dumpWrongStackSlot = candidateDestination + 1;
                         while (handler.slots.get(dumpWrongStackSlot).getStack().getItem() != Items.AIR && dumpWrongStackSlot <= maxSlot) dumpWrongStackSlot++;
@@ -72,7 +73,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
                             //Returns remaining
                             interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player);
                             currentHeldStack = handler.getCursorStack();
-                            return MOVERESULT_FULL;
+                            return MOVE_RESULT_FULL;
                         }
 
                         //Swap right and wrong
@@ -137,7 +138,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
     }
 
     @Override
-    public void sort(InvTweaksOperationInfo operationInfo) {
+    public OperationResult sort(InvTweaksOperationInfo operationInfo) {
         ScreenHandler handler = operationInfo.clickedSI().screenHandler();
         int startSlot = operationInfo.clickedSI().start();
         int endSlot = operationInfo.clickedSI().end();
@@ -169,45 +170,49 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
                 if (placedAt > 0) {
                     movedItems += stack.getCount();
                     if (handler.slots.get(placedAt).getStack().getItem() != item)
-                        destinationSlot++; //If diferent, no merging attempt is needed TODO: check if best approach
+                        destinationSlot++; //If different, no merging attempt is needed TODO: check if best approach
                 }
             }
             while (handler.slots.get(destinationSlot).getStack().getItem() == item) destinationSlot++;
         }
+        return new OperationResult(true);
     }
 
     @Override
-    public void moveAll(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveAll(InvTweaksOperationInfo operationInfo) {
         for (int slotId = operationInfo.clickedSI().start(); slotId <= operationInfo.clickedSI().end(); slotId++) {
             ItemStack stack = operationInfo.clickedSI().screenHandler().getSlot(slotId).getStack();
             if (stack.getItem() == Items.AIR) continue;
             int result = moveToInventory(operationInfo.clickedSI().screenHandler(), slotId, operationInfo.targetSI(), stack.getCount(), false);
-            if (result == MOVERESULT_FULL) break;
+            if (result == MOVE_RESULT_FULL) break;
         }
+        return new OperationResult(true);
     }
 
     @Override
-    public void dropAll(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropAll(InvTweaksOperationInfo operationInfo) {
         ClientPlayerEntity playerEntity = MinecraftClient.getInstance().player;
         for (int slotId = operationInfo.clickedSI().start(); slotId <= operationInfo.clickedSI().end(); slotId++) {
             MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedSI().screenHandler().syncId, slotId, 1, SlotActionType.THROW, playerEntity);
         }
+        return new OperationResult(true);
     }
 
     @Override
-    public void moveAllSameType(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveAllSameType(InvTweaksOperationInfo operationInfo) {
         Item itemType = operationInfo.clickedSlot().getStack().getItem();
         for (int slot = operationInfo.clickedSI().start(); slot <= operationInfo.clickedSI().end(); slot++) {
             ItemStack stack = operationInfo.clickedSI().screenHandler().slots.get(slot).getStack();
             if (stack.getItem() != itemType) continue;
 
             int result = moveToInventory(operationInfo.clickedSI().screenHandler(), slot, operationInfo.targetSI(), stack.getCount(), false);
-            if (result == MOVERESULT_FULL) break;
+            if (result == MOVE_RESULT_FULL) break;
         }
+        return new OperationResult(true);
     }
 
     @Override
-    public void dropAllSameType(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropAllSameType(InvTweaksOperationInfo operationInfo) {
         ClientPlayerEntity playerEntity = MinecraftClient.getInstance().player;
         Item itemType = operationInfo.clickedSlot().getStack().getItem();
         for (int slot = operationInfo.clickedSI().start(); slot <= operationInfo.clickedSI().end(); slot++) {
@@ -215,33 +220,58 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
             if (stack.getItem() != itemType) continue;
             MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedSI().screenHandler().syncId, slot, 1, SlotActionType.THROW, playerEntity);
         }
+        return new OperationResult(true);
     }
 
     @Override
-    public void moveOne(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveOne(InvTweaksOperationInfo operationInfo) {
         ScreenHandler handler = operationInfo.clickedSI().screenHandler();
         int from = operationInfo.clickedSlot().id;
         int result = moveToInventory(handler,from, operationInfo.targetSI(), 1, false);
+        return new OperationResult(true);
     }
 
     @Override
-    public void dropOne(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropOne(InvTweaksOperationInfo operationInfo) {
         ClientPlayerEntity playerEntity = MinecraftClient.getInstance().player;
         MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedSI().screenHandler().syncId, operationInfo.clickedSlot().id, 0, SlotActionType.THROW, playerEntity);
+        return new OperationResult(true);
     }
 
     @Override
-    public void moveStack(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveStack(InvTweaksOperationInfo operationInfo) {
         ScreenHandler handler = operationInfo.clickedSI().screenHandler();
         int from = operationInfo.clickedSlot().id;
         ItemStack stack = operationInfo.clickedSlot().getStack();
         moveToInventory(handler,from, operationInfo.targetSI(), stack.getCount(), false);
-
+        return new OperationResult(true);
     }
 
     @Override
-    public void dropStack(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropStack(InvTweaksOperationInfo operationInfo) {
         ClientPlayerEntity playerEntity = MinecraftClient.getInstance().player;
         MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedSI().screenHandler().syncId, operationInfo.clickedSlot().id, 1, SlotActionType.THROW, playerEntity);
+        return new OperationResult(true);
+    }
+
+    @Override
+    public OperationResult craftOne(InvTweaksOperationInfo operationInfo) {
+        return new OperationResult(false);
+    }
+
+
+    @Override
+    public OperationResult craftStack(InvTweaksOperationInfo operationInfo) {
+        return new OperationResult(false);
+    }
+
+    @Override
+    public OperationResult craftAll(InvTweaksOperationInfo operationInfo) {
+        return new OperationResult(false);
+    }
+
+    @Override
+    public OperationResult craftAllSameType(InvTweaksOperationInfo operationInfo) {
+        return new OperationResult(false);
     }
 }

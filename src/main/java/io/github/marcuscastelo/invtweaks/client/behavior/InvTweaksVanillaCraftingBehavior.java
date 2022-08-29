@@ -1,6 +1,8 @@
 package io.github.marcuscastelo.invtweaks.client.behavior;
 
+import io.github.marcuscastelo.invtweaks.InvTweaksMod;
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
+import io.github.marcuscastelo.invtweaks.OperationResult;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import io.github.marcuscastelo.invtweaks.util.InvtweaksScreenController;
 import net.minecraft.client.MinecraftClient;
@@ -10,7 +12,11 @@ import net.minecraft.screen.ScreenHandler;
 import net.minecraft.text.Text;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static io.github.marcuscastelo.invtweaks.InvTweaksMod.LOGGER;
 
 public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBehavior{
     private static final int RESULT_SLOT = 0;
@@ -32,7 +38,7 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
         var recipe = new ItemStack[gridSI.getSize()];
         int recipeIndex = 0;
         for (int slot = gridSI.start(); slot <= gridSI.end(); slot++, recipeIndex++) {
-            recipe[recipeIndex] = gridSI.screenHandler().getSlot(slot).getStack();
+            recipe[recipeIndex] = gridSI.screenHandler().slots.get(slot).getStack();
         }
         return recipe;
     }
@@ -160,7 +166,7 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
     }
 
     @Override
-    public void sort(InvTweaksOperationInfo operationInfo) {
+    public OperationResult sort(InvTweaksOperationInfo operationInfo) {
 //        if (!isCraftingInv(operationInfo.clickedSI())) {
 //            super.sort(operationInfo);
 //            return;
@@ -176,16 +182,17 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
             warnPlayer("Toppp");
         }
 
+        return new OperationResult(true);
     }
 
     @Override
-    public void moveAll(InvTweaksOperationInfo operationInfo) {
-        super.moveAll(operationInfo);
+    public OperationResult moveAll(InvTweaksOperationInfo operationInfo) {
+        return super.moveAll(operationInfo);
     }
 
     @Override
-    public void dropAll(InvTweaksOperationInfo operationInfo) {
-        super.dropAll(operationInfo);
+    public OperationResult dropAll(InvTweaksOperationInfo operationInfo) {
+        return super.dropAll(operationInfo);
     }
 
     private void warnPlayer(String message) {
@@ -203,7 +210,7 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
         return -1;
     }
 
-    private boolean replenishRecipe(ScreenInventory gridSI, ScreenInventory playerMainSI, ItemStack[] recipeStacks) {
+    private boolean replenishRecipe(ScreenInventory gridSI, ScreenInventory playerMainSI, List<ItemStack> recipeStacks) {
         ScreenHandler handler = gridSI.screenHandler();
         InvtweaksScreenController screenController = new InvtweaksScreenController(handler);
 
@@ -211,94 +218,118 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
 
         boolean replenishedAtLeastOne = false;
 
-        System.out.println("Replenishing recipe");
-        for (int i = 0; i < recipeStacks.length; i++) {
-            ItemStack recipeStack = recipeStacks[i];
+        LOGGER.info("Replenishing recipe");
+        for (int i = 0; i < recipeStacks.size(); i++) {
+            ItemStack recipeStack = recipeStacks.get(i);
+            if (recipeStack.isEmpty()) {
+                LOGGER.info("Recipe stack is empty for slot " + (i+1) + " of recipe: " + recipeStack);
+                continue;
+            }
+
             int currentSlot = gridStart + i;
             ItemStack currentStack = screenController.getStack(currentSlot);
             if (currentStack.getCount() < currentStack.getMaxCount()) {
                 int playerMainSlot = searchForItem(playerMainSI, recipeStack.getItem());
                 if (playerMainSlot == -1) {
                     warnPlayer("Could not find item " + recipeStack.getItem().getName().getString());
-                    System.out.println("Could not find item " + recipeStack.getItem().getName().getString());
+                    LOGGER.info("Could not find item " + recipeStack.getItem().getName().getString());
                     return false;
                 }
 
+                LOGGER.info("Replenishing item " + recipeStack.getItem().getName().getString() + " from slot " + playerMainSlot + " to slot " + currentSlot);
+
+                LOGGER.info("Pick item from slot " + playerMainSlot);
                 screenController.pickStack(playerMainSlot);
+                LOGGER.info("Held stack: " + screenController.getHeldStack());
+                LOGGER.info("Place item to slot " + currentSlot);
                 screenController.placeOne(currentSlot);
-                screenController.placeStack(playerMainSlot);
+                LOGGER.info("Check if there is still something to place");
+                if (!screenController.getHeldStack().isEmpty()){
+                    LOGGER.info("There is still something to place, place it to slot " + playerMainSlot);
+                    screenController.placeStack(playerMainSlot);
+                } else {
+                    LOGGER.info("There is nothing to place anymore");
+                }
                 replenishedAtLeastOne = true;
             }
         }
 
-        System.out.println("Replenished at least one: " + replenishedAtLeastOne);
+        LOGGER.info("Replenished at least one: " + replenishedAtLeastOne);
         return replenishedAtLeastOne;
     }
 
     @Override
-    public void moveAllSameType(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveAllSameType(InvTweaksOperationInfo operationInfo) {
         //TODO: implement this
         if (operationInfo.clickedSlot().id != RESULT_SLOT) {
-            super.moveAllSameType(operationInfo);
-            return;
+            return super.moveAllSameType(operationInfo);
         }
 
         ItemStack resultStack = operationInfo.clickedSI().screenHandler().slots.get(RESULT_SLOT).getStack();
         if (resultStack.isEmpty()) {
-            return;
+            return new OperationResult(true);
         }
 
-        ScreenInventory craftingSI = operationInfo.clickedSI();
+        ScreenInventory craftingSI = operationInfo.otherInventories().craftingSI.orElse(null);
+        if (craftingSI == null) {
+            LOGGER.error("Could not find crafting inventory in " + operationInfo.clickedSI().screenHandler().toString());
+            return new OperationResult(false);
+        }
         CraftingSubScreenInvs subScreenInvs = getCraftingSubScreenInvs(craftingSI);
 
         ScreenInventory gridSI = subScreenInvs.gridSI;
         ScreenInventory playerMainSI = operationInfo.targetSI();
-        ItemStack[] currentRecipeStacks = getCurrentRecipeStacks(gridSI);
+        //TODO: refactor hardcoded values 1 and 10
+        List<ItemStack> currentRecipeStacks = craftingSI.screenHandler().getStacks().subList(1, 10).stream().map(ItemStack::copy).toList();
+
 
         InvtweaksScreenController screenController = new InvtweaksScreenController(gridSI.screenHandler());
 
-        int maxReplenish = 100;
+        int maxReplenish = 2304;
 
         boolean replenished;
         do {
             spreadItemsInPlace(gridSI);
-            screenController.dropOne(RESULT_SLOT);
-//            screenController.craftAll(RESULT_SLOT);
+//            screenController.dropOne(RESULT_SLOT);
+            screenController.craftAll(RESULT_SLOT);
             replenished = replenishRecipe(gridSI, playerMainSI, currentRecipeStacks);
         } while (replenished && --maxReplenish > 0);
+
+        return new OperationResult(true);
     }
 
     @Override
-    public void dropAllSameType(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropAllSameType(InvTweaksOperationInfo operationInfo) {
         final int RESULT_SLOT = 0;
         if (operationInfo.clickedSlot().id != RESULT_SLOT) {
-            super.moveAllSameType(operationInfo);
-            return;
+            super.dropAllSameType(operationInfo);
         }
+        return new OperationResult(true);
     }
 
     @Override
-    public void moveOne(InvTweaksOperationInfo operationInfo) {
-        super.moveOne(operationInfo);
+    public OperationResult moveOne(InvTweaksOperationInfo operationInfo) {
+        return new OperationResult(false);
     }
 
     @Override
-    public void dropOne(InvTweaksOperationInfo operationInfo) {
-        super.dropOne(operationInfo);
+    public OperationResult dropOne(InvTweaksOperationInfo operationInfo) {
+        return super.dropOne(operationInfo);
     }
 
     @Override
-    public void moveStack(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveStack(InvTweaksOperationInfo operationInfo) {
         if (operationInfo.clickedSlot().id == RESULT_SLOT) {
             InvtweaksScreenController screenController = new InvtweaksScreenController(operationInfo.clickedSI().screenHandler());
             screenController.craftAll(RESULT_SLOT);
-            return;
+            return new OperationResult(true);
         }
-        super.moveStack(operationInfo);
+
+        return super.moveStack(operationInfo);
     }
 
     @Override
-    public void dropStack(InvTweaksOperationInfo operationInfo) {
-        super.dropStack(operationInfo);
+    public OperationResult dropStack(InvTweaksOperationInfo operationInfo) {
+        return super.dropStack(operationInfo);
     }
 }

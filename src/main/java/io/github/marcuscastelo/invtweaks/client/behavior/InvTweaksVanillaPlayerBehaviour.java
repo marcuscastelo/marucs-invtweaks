@@ -1,6 +1,7 @@
 package io.github.marcuscastelo.invtweaks.client.behavior;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
+import io.github.marcuscastelo.invtweaks.OperationResult;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.PlayerScreenHandler;
@@ -24,46 +25,47 @@ public class InvTweaksVanillaPlayerBehaviour extends InvTweaksVanillaGenericBeha
     }
 
     @Override
-    public void sort(InvTweaksOperationInfo operationInfo) {
+    public OperationResult sort(InvTweaksOperationInfo operationInfo) {
         //Do not sort armor
         if (isArmorSlot(operationInfo.clickedSlot().id))
-            return;
-        super.sort(operationInfo);
+            return new OperationResult(false);
+
+        return super.sort(operationInfo);
     }
 
     @Override
-    public void moveAll(InvTweaksOperationInfo operationInfo) {
-        super.moveAll(operationInfo);
+    public OperationResult moveAll(InvTweaksOperationInfo operationInfo) {
+        return super.moveAll(operationInfo);
     }
 
     @Override
-    public void dropAll(InvTweaksOperationInfo operationInfo) {
-        super.dropAll(operationInfo);
+    public OperationResult dropAll(InvTweaksOperationInfo operationInfo) {
+        return super.dropAll(operationInfo);
     }
 
     @Override
-    public void moveAllSameType(InvTweaksOperationInfo operationInfo) {
-        super.moveAllSameType(operationInfo);
+    public OperationResult moveAllSameType(InvTweaksOperationInfo operationInfo) {
+        return super.moveAllSameType(operationInfo);
     }
 
     @Override
-    public void dropAllSameType(InvTweaksOperationInfo operationInfo) {
-        super.dropAllSameType(operationInfo);
+    public OperationResult dropAllSameType(InvTweaksOperationInfo operationInfo) {
+        return super.dropAllSameType(operationInfo);
     }
 
     @Override
-    public void moveOne(InvTweaksOperationInfo operationInfo) {
-        super.moveOne(operationInfo);
+    public OperationResult moveOne(InvTweaksOperationInfo operationInfo) {
+        return super.moveOne(operationInfo);
     }
 
     @Override
-    public void dropOne(InvTweaksOperationInfo operationInfo) {
-        super.dropOne(operationInfo);
+    public OperationResult dropOne(InvTweaksOperationInfo operationInfo) {
+        return super.dropOne(operationInfo);
     }
 
     @Override
-    public void dropStack(InvTweaksOperationInfo operationInfo) {
-        super.dropStack(operationInfo);
+    public OperationResult dropStack(InvTweaksOperationInfo operationInfo) {
+        return super.dropStack(operationInfo);
     }
 
     boolean isMoveableToArmorSlot(InvTweaksOperationInfo operationInfo, ItemStack itemStack) {
@@ -86,7 +88,7 @@ public class InvTweaksVanillaPlayerBehaviour extends InvTweaksVanillaGenericBeha
     }
 
     @Override
-    public void moveStack(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveStack(InvTweaksOperationInfo operationInfo) {
         ItemStack itemStack = operationInfo.clickedSlot().getStack();
 
         ScreenHandler screenHandler = operationInfo.clickedSI().screenHandler();
@@ -102,6 +104,7 @@ public class InvTweaksVanillaPlayerBehaviour extends InvTweaksVanillaGenericBeha
 //            int clickedSlotId = operationInfo.clickedSlot().id;
 //            MinecraftClient.getInstance().interactionManager.clickSlot(screenHandler.syncId, clickedSlotId, 0, SlotActionType.QUICK_MOVE, MinecraftClient.getInstance().player);
 //            return; //Minecraft default behavior
-        super.moveStack(operationInfo);
+
+        return super.moveStack(operationInfo);
     }
 }
