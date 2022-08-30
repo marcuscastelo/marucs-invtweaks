@@ -1,15 +1,12 @@
-
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "io.github.marcuscastelo.invtweaks.mixin",
+  "package": "net.fabricmc.example.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
   ],
   "client": [
-    "MixinHandledScreen",
-    "MixinMerchantScreenHandler",
-    "MixinMobEntity"
+    "ExampleMixin"
   ],
   "injectors": {
     "defaultRequire": 1
