@@ -139,7 +139,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         //In case of clicking outside of inventory, just ignore
         if (slot == null) return;
         if (pressedButton != 0 && pressedButton != 1 && pressedButton != 2) return; //Only left, right and middle clicks are handled
-//        if (1==1) return;
+
         //Bypass the middle click filter, so that we can handle the middle click
         if (isBypassActive()) {
             pressedButton = MIDDLE_CLICK;

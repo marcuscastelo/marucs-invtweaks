@@ -172,11 +172,11 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
 //            return;
 //        }
 //
-//        ScreenInventory craftingSI = operationInfo.clickedSI();
-//        CraftingSubScreenInvs subScreenInvs = getCraftingSubScreenInvs(craftingSI);
-//        ScreenInventory craftingGridSI = subScreenInvs.gridSI;
+        ScreenInventory craftingSI = operationInfo.clickedSI();
+        CraftingSubScreenInvs subScreenInvs = getCraftingSubScreenInvs(craftingSI);
+        ScreenInventory craftingGridSI = subScreenInvs.gridSI;
 //
-//        spreadItemsInPlace(craftingGridSI);
+        spreadItemsInPlace(craftingGridSI);
 
         if (operationInfo.clickedSI() == operationInfo.otherInventories().craftingSI.orElse(null)) {
             warnPlayer("Toppp");
@@ -249,7 +249,7 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
             screenController.pickStack(playerMainSlot);
             LOGGER.info("Held stack: " + screenController.getHeldStack());
             LOGGER.info("Place item to slot " + currentSlot);
-            screenController.placeOne(currentSlot);
+            screenController.placeStack(currentSlot);
             LOGGER.info("Check if there is still something to place");
             if (!screenController.getHeldStack().isEmpty()){
                 LOGGER.info("There is still something to place, place it to slot " + playerMainSlot);
@@ -290,38 +290,24 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
 
         InvtweaksScreenController screenController = new InvtweaksScreenController(gridSI.screenHandler());
 
-        int maxReplenish = 4 * 9 * 64 * 20;
+        int maxIters = 64 * 4 * 9;
+
+        gridSI.screenHandler().disableSyncing();
 
         boolean ranOutOfMaterials;
         do {
-//            spreadItemsInPlace(gridSI);
-//            while (!screenController.getStack(RESULT_SLOT).isEmpty())
+            spreadItemsInPlace(gridSI);
             screenController.dropOne(RESULT_SLOT);
-//            screenController.dropOne(RESULT_SLOT);
-//            screenController.dropOne(RESULT_SLOT);
-//            screenController.dropOne(RESULT_SLOT);
-//            screenController.dropOne(RESULT_SLOT);
-//            screenController.dropOne(RESULT_SLOT);
-//            screenController.dropOne(RESULT_SLOT);
-//            screenController.dropOne(RESULT_SLOT);
-//            screenController.dropOne(RESULT_SLOT);
 //            screenController.dropAll(RESULT_SLOT);
-//            screenController.dropAll(RESULT_SLOT);
-            screenController.dropAll(RESULT_SLOT);
-            gridSI.screenHandler().sendContentUpdates();
-
 //            screenController.craftAll(RESULT_SLOT);
+            warnPlayer("Replenishing recipe: " + resultStack.getItem().getName().getString());
             ranOutOfMaterials = replenishRecipe(gridSI, playerCombinedSI, currentRecipeStacks);
-            gridSI.screenHandler().sendContentUpdates();
-//            ranOutOfMaterials = false;
-        } while (!ranOutOfMaterials && --maxReplenish > 0);
+            ranOutOfMaterials = false;
+        } while (!ranOutOfMaterials && --maxIters > 0);
 
-        for (int i = 0; i < 64; i++) {
-            screenController.dropOne(RESULT_SLOT);
-            screenController.dropAll(RESULT_SLOT);
-        }
-
-        if (maxReplenish == 0) {
+        gridSI.screenHandler().enableSyncing();
+        gridSI.screenHandler().sendContentUpdates();
+        if (maxIters == 0) {
             warnPlayer("Could not replenish recipe");
         }
 
