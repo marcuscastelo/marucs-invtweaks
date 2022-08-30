@@ -1,0 +1,17 @@
+
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "io.github.marcuscastelo.invtweaks.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+  ],
+  "client": [
+    "MixinHandledScreen",
+    "MixinMerchantScreenHandler",
+    "MixinMobEntity"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

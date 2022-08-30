@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
-  "id": "modid",
+  "id": "marucs-invtweaks",
   "version": "${version}",
 
-  "name": "Example Mod",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "name": "Marucs' Invtweaks",
+  "description": "All your (g)old InvTweaks features, now for Fabric.",
   "authors": [
-    "Me!"
+    "marcuscastelo"
   ],
   "contact": {
     "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "sources": "https://github.com/marcuscastelo/marucs-invtweaks"
   },
 
   "license": "CC0-1.0",
-  "icon": "assets/modid/icon.png",
+  "icon": "assets/marucs-invtweaks/icon.png",
 
   "environment": "*",
   "entrypoints": {
@@ -26,17 +26,15 @@
     ]
   },
   "mixins": [
-    "modid.mixins.json"
+    "marucs-invtweaks.mixins.json"
   ],
 
   "depends": {
-    "fabricloader": ">=0.13.3",
-    "fabric": "*",
-    "minecraft": "1.18.x",
-    "java": ">=17",
-    "fabric-language-kotlin": ">=1.7.1+kotlin.1.6.10"
+    "fabricloader": ">=0.14.9",
+    "fabric-api": "*",
+    "minecraft": "~1.19",
+    "java": ">=17"
   },
   "suggests": {
-    "another-mod": "*"
   }
 }
