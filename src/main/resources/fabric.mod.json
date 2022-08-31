@@ -21,7 +21,7 @@
     "main": [
       {
         "adapter": "kotlin",
-        "value": "net.fabricmc.example.ExampleMod"
+        "value": "io.github.marcuscastelo.invtweaks.InvTweaksMod"
       }
     ]
   },

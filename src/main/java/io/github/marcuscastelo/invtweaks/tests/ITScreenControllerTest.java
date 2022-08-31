@@ -1,7 +1,7 @@
 package io.github.marcuscastelo.invtweaks.tests;
 
-import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
+import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import io.github.marcuscastelo.invtweaks.util.InvtweaksScreenController;
 import io.github.marcuscastelo.invtweaks.util.ItemStackUtils;
 import net.minecraft.item.Item;

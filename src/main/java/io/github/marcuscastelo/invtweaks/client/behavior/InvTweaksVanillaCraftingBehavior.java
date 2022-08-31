@@ -1,22 +1,20 @@
 package io.github.marcuscastelo.invtweaks.client.behavior;
 
-import io.github.marcuscastelo.invtweaks.InvTweaksMod;
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
 import io.github.marcuscastelo.invtweaks.OperationResult;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import io.github.marcuscastelo.invtweaks.util.InvtweaksScreenController;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.text.Text;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static io.github.marcuscastelo.invtweaks.InvTweaksMod.LOGGER;
+import static io.github.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer;
 
 public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBehavior{
     private static final int RESULT_SLOT = 0;
@@ -195,10 +193,6 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
         return super.dropAll(operationInfo);
     }
 
-    private void warnPlayer(String message) {
-        MinecraftClient.getInstance().player.sendMessage(Text.literal(message), false);
-    }
-
     private int searchForItem(ScreenInventory inventory, Item item) {
         InvtweaksScreenController screenController = new InvtweaksScreenController(inventory.screenHandler());
         for (int slotId = inventory.start(); slotId <= inventory.end(); slotId++) {
@@ -210,6 +204,7 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
         return -1;
     }
 
+    @Deprecated(forRemoval = true)
     private boolean replenishRecipe(ScreenInventory gridSI, ScreenInventory resourcesSI, List<ItemStack> recipeStacks) {
         ScreenHandler handler = gridSI.screenHandler();
         InvtweaksScreenController screenController = new InvtweaksScreenController(handler);
@@ -285,30 +280,67 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
         ScreenInventory gridSI = subScreenInvs.gridSI;
         ScreenInventory playerCombinedSI = operationInfo.otherInventories().playerCombinedSI;
         //TODO: refactor hardcoded values 1 and 10
-        List<ItemStack> currentRecipeStacks = craftingSI.screenHandler().getStacks().subList(1, 10).stream().map(ItemStack::copy).toList();
-
+        List<ItemStack> recipeStacks = craftingSI.screenHandler().getStacks().subList(1, 10).stream().map(ItemStack::getItem).map(Item::getDefaultStack).toList();
+        List<ItemStack> resourceStacks = playerCombinedSI.screenHandler().getStacks().subList(playerCombinedSI.start(), playerCombinedSI.end()+1).stream().map(ItemStack::getItem).map(Item::getDefaultStack).toList();
 
         InvtweaksScreenController screenController = new InvtweaksScreenController(gridSI.screenHandler());
 
-        int maxIters = 64 * 4 * 9;
+        List<Item> uniqueRecipeItems = recipeStacks.stream().map(ItemStack::getItem).distinct().toList();
+        Map<Item, List<Integer>> itemToSlotMap = new HashMap<>();
+        for (Item item : uniqueRecipeItems) {
+            itemToSlotMap.put(item, new ArrayList<>());
+        }
 
-        gridSI.screenHandler().disableSyncing();
+        for (int slotId = gridSI.start(); slotId <= gridSI.end(); slotId++) {
+            ItemStack stack = screenController.getStack(slotId);
+            if (stack.isEmpty()) {
+                continue;
+            }
+            Item item = stack.getItem();
 
-        boolean ranOutOfMaterials;
-        do {
-            spreadItemsInPlace(gridSI);
-            screenController.dropOne(RESULT_SLOT);
-//            screenController.dropAll(RESULT_SLOT);
-//            screenController.craftAll(RESULT_SLOT);
-            warnPlayer("Replenishing recipe: " + resultStack.getItem().getName().getString());
-            ranOutOfMaterials = replenishRecipe(gridSI, playerCombinedSI, currentRecipeStacks);
-            ranOutOfMaterials = false;
-        } while (!ranOutOfMaterials && --maxIters > 0);
+            if (!itemToSlotMap.containsKey(item)) {
+                continue;
+            }
 
-        gridSI.screenHandler().enableSyncing();
-        gridSI.screenHandler().sendContentUpdates();
-        if (maxIters == 0) {
-            warnPlayer("Could not replenish recipe");
+            itemToSlotMap.get(item).add(slotId);
+        }
+
+        Map<Item, Integer> recipeItemCounts = new HashMap<>();
+        Map<Item, Integer> resourceItemCounts = new HashMap<>();
+        for (Item item : uniqueRecipeItems) {
+            recipeItemCounts.put(item, 0);
+            resourceItemCounts.put(item, 0);
+        }
+
+        for (ItemStack recipeStack : recipeStacks) {
+            recipeItemCounts.put(recipeStack.getItem(), recipeItemCounts.get(recipeStack.getItem()) + 1);
+        }
+
+        for (ItemStack resourceStack : resourceStacks) {
+            resourceItemCounts.put(resourceStack.getItem(), resourceItemCounts.get(resourceStack.getItem()) + 1);
+        }
+
+        Map<Item, Integer> craftableByResource = new HashMap<>();
+        for (Item item : uniqueRecipeItems) {
+            if (recipeItemCounts.get(item) == 0) {
+                warnPlayer("Bug in recipeItemCounts.get(item) == 0, " + this.getClass().getName());
+                continue;
+            }
+            craftableByResource.put(item, resourceItemCounts.get(item) / recipeItemCounts.get(item));
+        }
+
+        int maxCraftCount = craftableByResource.values().stream().mapToInt(Integer::intValue).min().orElse(0);
+        LOGGER.info("maxCraftCount: " + maxCraftCount);
+
+        // Craft all items
+
+        for (int i = 0; i < maxCraftCount; i++) {
+            boolean ranOutOfMaterials = replenishRecipe(gridSI, playerCombinedSI, recipeStacks);
+            if (ranOutOfMaterials) {
+                LOGGER.warn("Ran out of materials earlier than expected");
+                warnPlayer("Ran out of materials earlier than expected");
+                return new OperationResult(true);
+            }
         }
 
         return new OperationResult(true);

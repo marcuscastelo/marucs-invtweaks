@@ -128,10 +128,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
     private void debugPrintScreenHandlerInfo(ScreenInventories invs) {
         warnPlayer(handler.getClass().getName());
         warnPlayer("Inventories:");
-        warnPlayer("\tHotbar: "+invs.playerHotbarSI);
-        warnPlayer("\tMain: "+invs.playerMainSI);
-        warnPlayer("\tCrafting: "+invs.craftingSI);
-        warnPlayer("\tExternal: "+invs.storageSI);
+        invs.allInvs().forEach(inv -> warnPlayer(inv.getClass().getName()));
     }
 
     @Inject(method = "onMouseClick(Lnet/minecraft/screen/slot/Slot;IILnet/minecraft/screen/slot/SlotActionType;)V", at = @At("HEAD"), cancellable = true)
@@ -139,7 +136,6 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         //In case of clicking outside of inventory, just ignore
         if (slot == null) return;
         if (pressedButton != 0 && pressedButton != 1 && pressedButton != 2) return; //Only left, right and middle clicks are handled
-
         //Bypass the middle click filter, so that we can handle the middle click
         if (isBypassActive()) {
             pressedButton = MIDDLE_CLICK;
@@ -151,6 +147,12 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
 
         if (!isScreenSupported()) {
             warnPlayer("This screen is not supported by Marucs' InvTweaks");
+            warnPlayer("This screen is not supported by Marucs' InvTweaks");
+            warnPlayer("This screen is not supported by Marucs' InvTweaks");
+            warnPlayer("This screen is not supported by Marucs' InvTweaks");
+            while (--pressedButton >= 0) {
+                warnPlayer("This screen is not supported by Marucs' InvTweaks");
+            }
             return;
         }
 

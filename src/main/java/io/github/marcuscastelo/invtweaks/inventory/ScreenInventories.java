@@ -28,9 +28,13 @@ public class ScreenInventories {
 
     public final Optional<ScreenInventory> armorSI;
 
-    private Stream<ScreenInventory> extraInvs() {
+    public Stream<ScreenInventory> extraInvs() {
         Stream<Optional<ScreenInventory>> optionalStream = Arrays.stream(new Optional[]{storageSI, craftingSI, craftingResultSI, armorSI});
         return optionalStream.filter(Optional::isPresent).map(Optional::get);
+    }
+
+    public Stream<ScreenInventory> allInvs() {
+        return Stream.concat(Stream.of(playerCombinedSI, playerMainSI, playerHotbarSI), extraInvs());
     }
 
     private boolean isExtraInv(ScreenInventory si) {
