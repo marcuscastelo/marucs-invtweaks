@@ -2,6 +2,7 @@ package io.github.marcuscastelo.invtweaks.client.behavior;
 
 import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
 import io.github.marcuscastelo.invtweaks.OperationResult;
+import io.github.marcuscastelo.invtweaks.crafting.RecipeStacks;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import io.github.marcuscastelo.invtweaks.util.InvtweaksScreenController;
 import net.minecraft.item.Item;
@@ -204,8 +205,7 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
         return -1;
     }
 
-    @Deprecated(forRemoval = true)
-    private boolean replenishRecipe(ScreenInventory gridSI, ScreenInventory resourcesSI, List<ItemStack> recipeStacks) {
+    private boolean replenishRecipe(ScreenInventory gridSI, ScreenInventory resourcesSI, RecipeStacks recipeStacks) {
         ScreenHandler handler = gridSI.screenHandler();
         InvtweaksScreenController screenController = new InvtweaksScreenController(handler);
 
@@ -214,20 +214,20 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
         boolean ranOutOfMaterials = false;
 
         LOGGER.info("Replenishing recipe");
-        for (int i = 0; i < recipeStacks.size(); i++) {
-            ItemStack recipeStack = recipeStacks.get(i);
+        for (int i = 0; i < recipeStacks.getRecipeStacks().size(); i++) {
+            ItemStack recipeStack = recipeStacks.getRecipeStacks().get(i);
             if (recipeStack.isEmpty()) {
-                LOGGER.info("Recipe stack is empty for slot " + (i+1) + " of stack: " + recipeStack);
+//                LOGGER.info("Recipe stack is empty for slot " + (i+1) + " of stack: " + recipeStack);
                 continue;
             }
             else {
-                LOGGER.info("Recipe stack for slot " + (i+1) + " is: " + recipeStack);
+//                LOGGER.info("Recipe stack for slot " + (i+1) + " is: " + recipeStack);
             }
 
             int currentSlot = gridStart + i;
             ItemStack currentStack = screenController.getStack(currentSlot);
             if (currentStack.getCount() >= currentStack.getMaxCount()) {
-                LOGGER.info("Current stack is full for slot " + (i+1) + " of stack: " + currentStack);
+//                LOGGER.info("Current stack is full for slot " + (i+1) + " of stack: " + currentStack);
 //                continue; // Already full
             }
 
@@ -238,23 +238,16 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
                 return true;
             }
 
-            LOGGER.info("Replenishing item " + recipeStack.getItem().getName().getString() + " from slot " + playerMainSlot + " to slot " + currentSlot);
-
-            LOGGER.info("Pick item from slot " + playerMainSlot);
             screenController.pickStack(playerMainSlot);
-            LOGGER.info("Held stack: " + screenController.getHeldStack());
-            LOGGER.info("Place item to slot " + currentSlot);
             screenController.placeStack(currentSlot);
-            LOGGER.info("Check if there is still something to place");
             if (!screenController.getHeldStack().isEmpty()){
-                LOGGER.info("There is still something to place, place it to slot " + playerMainSlot);
                 screenController.placeStack(playerMainSlot);
             } else {
-                LOGGER.info("There is nothing to place anymore");
+//                LOGGER.info("There is nothing to place anymore");
             }
         }
 
-        LOGGER.info("ranOutOfMaterials: " + ranOutOfMaterials);
+//        LOGGER.info("ranOutOfMaterials: " + ranOutOfMaterials);
         return ranOutOfMaterials;
     }
 
@@ -279,15 +272,21 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
 
         ScreenInventory gridSI = subScreenInvs.gridSI;
         ScreenInventory playerCombinedSI = operationInfo.otherInventories().playerCombinedSI;
-        //TODO: refactor hardcoded values 1 and 10
-        List<ItemStack> recipeStacks = craftingSI.screenHandler().getStacks().subList(1, 10).stream().map(ItemStack::getItem).map(Item::getDefaultStack).toList();
-        List<ItemStack> resourceStacks = playerCombinedSI.screenHandler().getStacks().subList(playerCombinedSI.start(), playerCombinedSI.end()+1).stream().map(ItemStack::getItem).map(Item::getDefaultStack).toList();
+
+        List<ItemStack> resourceStackList = playerCombinedSI.screenHandler().getStacks().subList(playerCombinedSI.start(), playerCombinedSI.end()+1).stream().map(ItemStack::copy).toList();
+
+        RecipeStacks recipeStacks;
+        {
+            //TODO: refactor hardcoded values 1 and 10
+            List<ItemStack> recipeStackList = craftingSI.screenHandler().getStacks().subList(1, 10).stream().map(ItemStack::getItem).map(Item::getDefaultStack).toList();
+            recipeStacks = new RecipeStacks(recipeStackList);
+        }
 
         InvtweaksScreenController screenController = new InvtweaksScreenController(gridSI.screenHandler());
 
-        List<Item> uniqueRecipeItems = recipeStacks.stream().map(ItemStack::getItem).distinct().toList();
+
         Map<Item, List<Integer>> itemToSlotMap = new HashMap<>();
-        for (Item item : uniqueRecipeItems) {
+        for (Item item : recipeStacks.getMaterialList()) {
             itemToSlotMap.put(item, new ArrayList<>());
         }
 
@@ -307,29 +306,48 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
 
         Map<Item, Integer> recipeItemCounts = new HashMap<>();
         Map<Item, Integer> resourceItemCounts = new HashMap<>();
-        for (Item item : uniqueRecipeItems) {
+
+        for (Item item : recipeStacks.getMaterialList()) {
             recipeItemCounts.put(item, 0);
-            resourceItemCounts.put(item, 0);
         }
 
-        for (ItemStack recipeStack : recipeStacks) {
-            recipeItemCounts.put(recipeStack.getItem(), recipeItemCounts.get(recipeStack.getItem()) + 1);
+        for (ItemStack recipeStack : recipeStacks.getRecipeStacks()) {
+            assert recipeStack.getCount() == 1;
+            Item item = recipeStack.getItem();
+            int newCount = recipeItemCounts.getOrDefault(item, 0) + recipeStack.getCount();
+            recipeItemCounts.put(item, newCount);
         }
 
-        for (ItemStack resourceStack : resourceStacks) {
-            resourceItemCounts.put(resourceStack.getItem(), resourceItemCounts.get(resourceStack.getItem()) + 1);
+        for (ItemStack resourceStack : resourceStackList) {
+            Item item = resourceStack.getItem();
+            int newCount = resourceItemCounts.getOrDefault(item, 0) + resourceStack.getCount();
+            resourceItemCounts.put(item, newCount);
         }
 
-        Map<Item, Integer> craftableByResource = new HashMap<>();
-        for (Item item : uniqueRecipeItems) {
+        Map<Item, Integer> craftCountByItem = new HashMap<>();
+        for (Item item : recipeStacks.getMaterialList()) {
             if (recipeItemCounts.get(item) == 0) {
                 warnPlayer("Bug in recipeItemCounts.get(item) == 0, " + this.getClass().getName());
                 continue;
             }
-            craftableByResource.put(item, resourceItemCounts.get(item) / recipeItemCounts.get(item));
+            Integer resourceCount = resourceItemCounts.getOrDefault(item, 0);
+            Integer recipeCount = recipeItemCounts.getOrDefault(item, -1);
+
+            if (resourceCount == 0) {
+                LOGGER.info("No resources for item " + item.getName().getString());
+                warnPlayer("No resources for item " + item.getName().getString());
+                break;
+            } else if (recipeCount == -1) {
+                LOGGER.error("Bug in recipeItemCounts.get(item) == -1, " + this.getClass().getName());
+                warnPlayer("Bug in recipeItemCounts.get(item) == -1, " + this.getClass().getName());
+                break;
+            }
+
+            int craftCount = resourceCount / recipeCount;
+            craftCountByItem.put(item, craftCount);
         }
 
-        int maxCraftCount = craftableByResource.values().stream().mapToInt(Integer::intValue).min().orElse(0);
+        int maxCraftCount = craftCountByItem.values().stream().mapToInt(Integer::intValue).min().orElse(0);
         LOGGER.info("maxCraftCount: " + maxCraftCount);
 
         // Craft all items
@@ -341,6 +359,8 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
                 warnPlayer("Ran out of materials earlier than expected");
                 return new OperationResult(true);
             }
+
+//            screenController.
         }
 
         return new OperationResult(true);

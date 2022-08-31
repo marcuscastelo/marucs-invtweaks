@@ -31,9 +31,9 @@ public class InvTweaksBehaviorRegistry {
         if (!isScreenSupported(screenHandlerClass))
             throw new IllegalArgumentException("Screen "  + screenHandlerClass + " doesn't have a behavior");
 
-        IInvTweaksBehavior behavior = screenBehaviorMap.get(screenHandlerClass).getInvTweaksBehavior();
+        IInvTweaksBehavior behavior = getScreenSpecs(screenHandlerClass).getInvTweaksBehavior();
         Optional<OperationExecutor> executor = operationInfo.type().asOperationExecutor(behavior);
-        if (executor.isPresent()) {
+    if (executor.isPresent()) {
             return executor.get().execute(operationInfo);
         } else {
             LOGGER.warn("<InvTweaksBehaviorRegistry> Operation " + operationInfo.type() + " is not supported by " + behavior.getClass());
