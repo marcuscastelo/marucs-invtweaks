@@ -48,9 +48,6 @@ enum class OperationType(val nature: OperationNature, val modifier: OperationMod
     fun isAllSameType() = modifier == OperationModifier.ALL_SAME_TYPE
 
     fun asOperationExecutor(behavior: IInvTweaksBehavior): Optional<OperationExecutor> {
-        val a: OperationExecutor = OperationExecutor { behavior.sort(it) }
-        val b = behavior::sort as OperationExecutor
-
         fun cast(function: (OperationInfo) -> OperationResult): Optional<OperationExecutor> =
                 Optional.of(OperationExecutor { function(it) })
 
