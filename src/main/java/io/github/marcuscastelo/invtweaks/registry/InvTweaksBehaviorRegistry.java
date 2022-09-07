@@ -1,11 +1,11 @@
 package io.github.marcuscastelo.invtweaks.registry;
 
-import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
-import io.github.marcuscastelo.invtweaks.OperationExecutor;
-import io.github.marcuscastelo.invtweaks.OperationResult;
+import io.github.marcuscastelo.invtweaks.operation.OperationExecutor;
+import io.github.marcuscastelo.invtweaks.operation.OperationInfo;
 import io.github.marcuscastelo.invtweaks.api.ScreenInventoriesSpecification;
 import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
 import io.github.marcuscastelo.invtweaks.client.behavior.*;
+import io.github.marcuscastelo.invtweaks.operation.OperationResult;
 import net.minecraft.screen.*;
 
 import java.util.HashMap;
@@ -27,7 +27,7 @@ public class InvTweaksBehaviorRegistry {
         return screenBehaviorMap.get(screenHandlerClass);
     }
 
-    public static OperationResult executeOperation(Class<? extends ScreenHandler> screenHandlerClass, InvTweaksOperationInfo operationInfo) throws IllegalArgumentException{
+    public static OperationResult executeOperation(Class<? extends ScreenHandler> screenHandlerClass, OperationInfo operationInfo) throws IllegalArgumentException{
         if (!isScreenSupported(screenHandlerClass))
             throw new IllegalArgumentException("Screen "  + screenHandlerClass + " doesn't have a behavior");
 
@@ -37,7 +37,7 @@ public class InvTweaksBehaviorRegistry {
             return executor.get().execute(operationInfo);
         } else {
             LOGGER.warn("<InvTweaksBehaviorRegistry> Operation " + operationInfo.type() + " is not supported by " + behavior.getClass());
-            return new OperationResult(false);
+            return OperationResult.Companion.getFAILURE();
         }
 
     }

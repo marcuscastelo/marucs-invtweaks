@@ -1,20 +1,20 @@
 package io.github.marcuscastelo.invtweaks.client.behavior;
 
-import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
-import io.github.marcuscastelo.invtweaks.OperationResult;
+import io.github.marcuscastelo.invtweaks.operation.OperationInfo;
+import io.github.marcuscastelo.invtweaks.operation.OperationResult;
 
 public interface IInvTweaksBehavior {
-    OperationResult sort(InvTweaksOperationInfo operationInfo);
-    OperationResult moveAll(InvTweaksOperationInfo operationInfo);
-    OperationResult dropAll(InvTweaksOperationInfo operationInfo);
-    OperationResult moveAllSameType(InvTweaksOperationInfo operationInfo);
-    OperationResult dropAllSameType(InvTweaksOperationInfo operationInfo);
-    OperationResult moveOne(InvTweaksOperationInfo operationInfo);
-    OperationResult dropOne(InvTweaksOperationInfo operationInfo);
-    OperationResult moveStack(InvTweaksOperationInfo operationInfo);
-    OperationResult dropStack(InvTweaksOperationInfo operationInfo);
-    OperationResult craftOne(InvTweaksOperationInfo operationInfo);
-    OperationResult craftStack(InvTweaksOperationInfo operationInfo);
-    OperationResult craftAll(InvTweaksOperationInfo operationInfo);
-    OperationResult craftAllSameType(InvTweaksOperationInfo operationInfo);
+    OperationResult sort(OperationInfo operationInfo);
+    OperationResult moveAll(OperationInfo operationInfo);
+    OperationResult dropAll(OperationInfo operationInfo);
+    OperationResult moveAllSameType(OperationInfo operationInfo);
+    OperationResult dropAllSameType(OperationInfo operationInfo);
+    OperationResult moveOne(OperationInfo operationInfo);
+    OperationResult dropOne(OperationInfo operationInfo);
+    OperationResult moveStack(OperationInfo operationInfo);
+    OperationResult dropStack(OperationInfo operationInfo);
+    OperationResult craftOne(OperationInfo operationInfo);
+    OperationResult craftStack(OperationInfo operationInfo);
+    OperationResult craftAll(OperationInfo operationInfo);
+    OperationResult craftAllSameType(OperationInfo operationInfo);
 }

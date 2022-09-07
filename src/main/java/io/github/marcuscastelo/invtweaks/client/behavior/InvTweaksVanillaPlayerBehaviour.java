@@ -1,8 +1,8 @@
 package io.github.marcuscastelo.invtweaks.client.behavior;
 
-import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
-import io.github.marcuscastelo.invtweaks.OperationResult;
+import io.github.marcuscastelo.invtweaks.operation.OperationInfo;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
+import io.github.marcuscastelo.invtweaks.operation.OperationResult;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.ScreenHandler;
@@ -25,50 +25,50 @@ public class InvTweaksVanillaPlayerBehaviour extends InvTweaksVanillaGenericBeha
     }
 
     @Override
-    public OperationResult sort(InvTweaksOperationInfo operationInfo) {
+    public OperationResult sort(OperationInfo operationInfo) {
         //Do not sort armor
         if (isArmorSlot(operationInfo.clickedSlot().id))
-            return new OperationResult(false);
+            return OperationResult.Companion.getFAILURE();
 
         return super.sort(operationInfo);
     }
 
     @Override
-    public OperationResult moveAll(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveAll(OperationInfo operationInfo) {
         return super.moveAll(operationInfo);
     }
 
     @Override
-    public OperationResult dropAll(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropAll(OperationInfo operationInfo) {
         return super.dropAll(operationInfo);
     }
 
     @Override
-    public OperationResult moveAllSameType(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveAllSameType(OperationInfo operationInfo) {
         return super.moveAllSameType(operationInfo);
     }
 
     @Override
-    public OperationResult dropAllSameType(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropAllSameType(OperationInfo operationInfo) {
         return super.dropAllSameType(operationInfo);
     }
 
     @Override
-    public OperationResult moveOne(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveOne(OperationInfo operationInfo) {
         return super.moveOne(operationInfo);
     }
 
     @Override
-    public OperationResult dropOne(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropOne(OperationInfo operationInfo) {
         return super.dropOne(operationInfo);
     }
 
     @Override
-    public OperationResult dropStack(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropStack(OperationInfo operationInfo) {
         return super.dropStack(operationInfo);
     }
 
-    boolean isMoveableToArmorSlot(InvTweaksOperationInfo operationInfo, ItemStack itemStack) {
+    boolean isMoveableToArmorSlot(OperationInfo operationInfo, ItemStack itemStack) {
         ScreenHandler screenHandler = operationInfo.clickedSI().screenHandler();
         if (!(screenHandler instanceof PlayerScreenHandler)) return false;
 
@@ -88,7 +88,7 @@ public class InvTweaksVanillaPlayerBehaviour extends InvTweaksVanillaGenericBeha
     }
 
     @Override
-    public OperationResult moveStack(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveStack(OperationInfo operationInfo) {
         ItemStack itemStack = operationInfo.clickedSlot().getStack();
 
         ScreenHandler screenHandler = operationInfo.clickedSI().screenHandler();
@@ -98,7 +98,7 @@ public class InvTweaksVanillaPlayerBehaviour extends InvTweaksVanillaGenericBeha
         boolean isClickInArmorOrCraft = operationInfo.clickedSI().start() <= 8;
         if (!isDownwardsMovement && (isMoveableToArmorSlot(operationInfo, itemStack) && !isClickInArmorOrCraft)) {
             ScreenInventory armorInv = new ScreenInventory(screenHandler, 5, 8);
-            operationInfo = new InvTweaksOperationInfo(operationInfo.type(), operationInfo.clickedSlot(), operationInfo.clickedSI(), armorInv, operationInfo.otherInventories());
+            operationInfo = new OperationInfo(operationInfo.type(), operationInfo.clickedSlot(), operationInfo.clickedSI(), armorInv, operationInfo.otherInventories());
         }
 
 //            int clickedSlotId = operationInfo.clickedSlot().id;

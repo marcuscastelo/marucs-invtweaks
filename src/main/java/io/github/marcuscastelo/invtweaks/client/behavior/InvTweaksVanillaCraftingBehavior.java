@@ -1,9 +1,9 @@
 package io.github.marcuscastelo.invtweaks.client.behavior;
 
-import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
-import io.github.marcuscastelo.invtweaks.OperationResult;
+import io.github.marcuscastelo.invtweaks.operation.OperationInfo;
 import io.github.marcuscastelo.invtweaks.crafting.RecipeStacks;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
+import io.github.marcuscastelo.invtweaks.operation.OperationResult;
 import io.github.marcuscastelo.invtweaks.util.InvtweaksScreenController;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -165,7 +165,7 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
     }
 
     @Override
-    public OperationResult sort(InvTweaksOperationInfo operationInfo) {
+    public OperationResult sort(OperationInfo operationInfo) {
 //        if (!isCraftingInv(operationInfo.clickedSI())) {
 //            super.sort(operationInfo);
 //            return;
@@ -181,16 +181,16 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
             warnPlayer("Toppp");
         }
 
-        return new OperationResult(true);
+        return OperationResult.Companion.getSUCCESS();
     }
 
     @Override
-    public OperationResult moveAll(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveAll(OperationInfo operationInfo) {
         return super.moveAll(operationInfo);
     }
 
     @Override
-    public OperationResult dropAll(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropAll(OperationInfo operationInfo) {
         return super.dropAll(operationInfo);
     }
 
@@ -252,7 +252,7 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
     }
 
     @Override
-    public OperationResult moveAllSameType(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveAllSameType(OperationInfo operationInfo) {
         //TODO: implement this
         if (operationInfo.clickedSlot().id != RESULT_SLOT) {
             return super.moveAllSameType(operationInfo);
@@ -260,13 +260,13 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
 
         ItemStack resultStack = operationInfo.clickedSI().screenHandler().slots.get(RESULT_SLOT).getStack();
         if (resultStack.isEmpty()) {
-            return new OperationResult(true);
+            return OperationResult.Companion.getSUCCESS();
         }
 
         ScreenInventory craftingSI = operationInfo.otherInventories().craftingSI.orElse(null);
         if (craftingSI == null) {
             LOGGER.error("Could not find crafting inventory in " + operationInfo.clickedSI().screenHandler().toString());
-            return new OperationResult(false);
+            return OperationResult.Companion.getFAILURE();
         }
         CraftingSubScreenInvs subScreenInvs = getCraftingSubScreenInvs(craftingSI);
 
@@ -357,47 +357,47 @@ public class InvTweaksVanillaCraftingBehavior extends InvTweaksVanillaGenericBeh
             if (ranOutOfMaterials) {
                 LOGGER.warn("Ran out of materials earlier than expected");
                 warnPlayer("Ran out of materials earlier than expected");
-                return new OperationResult(true);
+                return OperationResult.Companion.getSUCCESS();
             }
 
 //            screenController.
         }
 
-        return new OperationResult(true);
+        return OperationResult.Companion.getSUCCESS();
     }
 
     @Override
-    public OperationResult dropAllSameType(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropAllSameType(OperationInfo operationInfo) {
         final int RESULT_SLOT = 0;
         if (operationInfo.clickedSlot().id != RESULT_SLOT) {
             super.dropAllSameType(operationInfo);
         }
-        return new OperationResult(true);
+        return OperationResult.Companion.getSUCCESS();
     }
 
     @Override
-    public OperationResult moveOne(InvTweaksOperationInfo operationInfo) {
-        return new OperationResult(false);
+    public OperationResult moveOne(OperationInfo operationInfo) {
+        return OperationResult.Companion.getFAILURE();
     }
 
     @Override
-    public OperationResult dropOne(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropOne(OperationInfo operationInfo) {
         return super.dropOne(operationInfo);
     }
 
     @Override
-    public OperationResult moveStack(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveStack(OperationInfo operationInfo) {
         if (operationInfo.clickedSlot().id == RESULT_SLOT) {
             InvtweaksScreenController screenController = new InvtweaksScreenController(operationInfo.clickedSI().screenHandler());
             screenController.craftAll(RESULT_SLOT);
-            return new OperationResult(true);
+            return OperationResult.Companion.getSUCCESS();
         }
 
         return super.moveStack(operationInfo);
     }
 
     @Override
-    public OperationResult dropStack(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropStack(OperationInfo operationInfo) {
         return super.dropStack(operationInfo);
     }
 }

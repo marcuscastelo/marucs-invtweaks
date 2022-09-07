@@ -1,8 +1,8 @@
 package io.github.marcuscastelo.invtweaks.client.behavior;
 
-import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
-import io.github.marcuscastelo.invtweaks.OperationResult;
+import io.github.marcuscastelo.invtweaks.operation.OperationInfo;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
+import io.github.marcuscastelo.invtweaks.operation.OperationResult;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
@@ -138,7 +138,7 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
     }
 
     @Override
-    public OperationResult sort(InvTweaksOperationInfo operationInfo) {
+    public OperationResult sort(OperationInfo operationInfo) {
         ScreenHandler handler = operationInfo.clickedSI().screenHandler();
         int startSlot = operationInfo.clickedSI().start();
         int endSlot = operationInfo.clickedSI().end();
@@ -175,31 +175,32 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
             }
             while (handler.slots.get(destinationSlot).getStack().getItem() == item) destinationSlot++;
         }
-        return new OperationResult(true);
+        return OperationResult.Companion.getSUCCESS();
     }
 
     @Override
-    public OperationResult moveAll(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveAll(OperationInfo operationInfo) {
         for (int slotId = operationInfo.clickedSI().start(); slotId <= operationInfo.clickedSI().end(); slotId++) {
             ItemStack stack = operationInfo.clickedSI().screenHandler().getSlot(slotId).getStack();
             if (stack.getItem() == Items.AIR) continue;
             int result = moveToInventory(operationInfo.clickedSI().screenHandler(), slotId, operationInfo.targetSI(), stack.getCount(), false);
             if (result == MOVE_RESULT_FULL) break;
         }
-        return new OperationResult(true);
+        return OperationResult.Companion.getSUCCESS();
+
     }
 
     @Override
-    public OperationResult dropAll(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropAll(OperationInfo operationInfo) {
         ClientPlayerEntity playerEntity = MinecraftClient.getInstance().player;
         for (int slotId = operationInfo.clickedSI().start(); slotId <= operationInfo.clickedSI().end(); slotId++) {
             MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedSI().screenHandler().syncId, slotId, 1, SlotActionType.THROW, playerEntity);
         }
-        return new OperationResult(true);
+        return OperationResult.Companion.getSUCCESS();
     }
 
     @Override
-    public OperationResult moveAllSameType(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveAllSameType(OperationInfo operationInfo) {
         Item itemType = operationInfo.clickedSlot().getStack().getItem();
         for (int slot = operationInfo.clickedSI().start(); slot <= operationInfo.clickedSI().end(); slot++) {
             ItemStack stack = operationInfo.clickedSI().screenHandler().slots.get(slot).getStack();
@@ -208,11 +209,11 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
             int result = moveToInventory(operationInfo.clickedSI().screenHandler(), slot, operationInfo.targetSI(), stack.getCount(), false);
             if (result == MOVE_RESULT_FULL) break;
         }
-        return new OperationResult(true);
+        return OperationResult.Companion.getSUCCESS();
     }
 
     @Override
-    public OperationResult dropAllSameType(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropAllSameType(OperationInfo operationInfo) {
         ClientPlayerEntity playerEntity = MinecraftClient.getInstance().player;
         Item itemType = operationInfo.clickedSlot().getStack().getItem();
         for (int slot = operationInfo.clickedSI().start(); slot <= operationInfo.clickedSI().end(); slot++) {
@@ -220,58 +221,58 @@ public class InvTweaksVanillaGenericBehavior implements IInvTweaksBehavior {
             if (stack.getItem() != itemType) continue;
             MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedSI().screenHandler().syncId, slot, 1, SlotActionType.THROW, playerEntity);
         }
-        return new OperationResult(true);
+        return OperationResult.Companion.getSUCCESS();
     }
 
     @Override
-    public OperationResult moveOne(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveOne(OperationInfo operationInfo) {
         ScreenHandler handler = operationInfo.clickedSI().screenHandler();
         int from = operationInfo.clickedSlot().id;
         int result = moveToInventory(handler,from, operationInfo.targetSI(), 1, false);
-        return new OperationResult(true);
+        return OperationResult.Companion.getSUCCESS();
     }
 
     @Override
-    public OperationResult dropOne(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropOne(OperationInfo operationInfo) {
         ClientPlayerEntity playerEntity = MinecraftClient.getInstance().player;
         MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedSI().screenHandler().syncId, operationInfo.clickedSlot().id, 0, SlotActionType.THROW, playerEntity);
-        return new OperationResult(true);
+        return OperationResult.Companion.getSUCCESS();
     }
 
     @Override
-    public OperationResult moveStack(InvTweaksOperationInfo operationInfo) {
+    public OperationResult moveStack(OperationInfo operationInfo) {
         ScreenHandler handler = operationInfo.clickedSI().screenHandler();
         int from = operationInfo.clickedSlot().id;
         ItemStack stack = operationInfo.clickedSlot().getStack();
         moveToInventory(handler,from, operationInfo.targetSI(), stack.getCount(), false);
-        return new OperationResult(true);
+        return OperationResult.Companion.getSUCCESS();
     }
 
     @Override
-    public OperationResult dropStack(InvTweaksOperationInfo operationInfo) {
+    public OperationResult dropStack(OperationInfo operationInfo) {
         ClientPlayerEntity playerEntity = MinecraftClient.getInstance().player;
         MinecraftClient.getInstance().interactionManager.clickSlot(operationInfo.clickedSI().screenHandler().syncId, operationInfo.clickedSlot().id, 1, SlotActionType.THROW, playerEntity);
-        return new OperationResult(true);
+        return OperationResult.Companion.getSUCCESS();
     }
 
     @Override
-    public OperationResult craftOne(InvTweaksOperationInfo operationInfo) {
-        return new OperationResult(false);
+    public OperationResult craftOne(OperationInfo operationInfo) {
+        return OperationResult.Companion.getFAILURE();
     }
 
 
     @Override
-    public OperationResult craftStack(InvTweaksOperationInfo operationInfo) {
-        return new OperationResult(false);
+    public OperationResult craftStack(OperationInfo operationInfo) {
+        return OperationResult.Companion.getFAILURE();
     }
 
     @Override
-    public OperationResult craftAll(InvTweaksOperationInfo operationInfo) {
-        return new OperationResult(false);
+    public OperationResult craftAll(OperationInfo operationInfo) {
+        return OperationResult.Companion.getFAILURE();
     }
 
     @Override
-    public OperationResult craftAllSameType(InvTweaksOperationInfo operationInfo) {
-        return new OperationResult(false);
+    public OperationResult craftAllSameType(OperationInfo operationInfo) {
+        return OperationResult.Companion.getFAILURE();
     }
 }

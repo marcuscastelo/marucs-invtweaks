@@ -1,9 +1,7 @@
 package io.github.marcuscastelo.invtweaks.mixin;
 
 import com.google.common.collect.Streams;
-import io.github.marcuscastelo.invtweaks.InvTweaksOperationInfo;
-import io.github.marcuscastelo.invtweaks.InvTweaksOperationType;
-import io.github.marcuscastelo.invtweaks.OperationResult;
+import io.github.marcuscastelo.invtweaks.operation.*;
 import io.github.marcuscastelo.invtweaks.config.InvtweaksConfig;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventories;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
@@ -170,12 +168,12 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
             warnPlayer("Target SI = " + targetSI);
         }
 
-        Optional<InvTweaksOperationType> operationType_ = getOperationType(pressedButton);
+        Optional<OperationType> operationType_ = getOperationType(pressedButton);
 
-        if (operationType_.map(InvTweaksOperationType::isIgnore).orElse(false)) return;
+        if (operationType_.map(OperationType::isIgnore).orElse(false)) return;
 
-        InvTweaksOperationType operationType = operationType_.orElseThrow();
-        InvTweaksOperationInfo operationInfo = new InvTweaksOperationInfo(operationType, slot, clickedSI, targetSI, screenInvs);
+        OperationType operationType = operationType_.orElseThrow();
+        OperationInfo operationInfo = new OperationInfo(operationType, slot, clickedSI, targetSI, screenInvs);
 
         try {
             OperationResult result = InvTweaksBehaviorRegistry.executeOperation(handler.getClass(), operationInfo);
@@ -205,53 +203,53 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
     }
 
     //TODO: Make this a config option
-    private Optional<InvTweaksOperationType> getOperationType(int pressedButton) {
-        Optional<InvTweaksOperationType.Nature> nature = getOperationNature(pressedButton);
-        Optional<InvTweaksOperationType.Modifier> target = getOperationModifier(pressedButton);
+    private Optional<OperationType> getOperationType(int pressedButton) {
+        Optional<OperationNature> nature = getOperationNature(pressedButton);
+        Optional<OperationModifier> target = getOperationModifier(pressedButton);
 
-        return Streams.zip(nature.stream(), target.stream(), InvTweaksOperationType::new).findFirst();
+        return Streams.zip(nature.stream(), target.stream(), OperationType::fromPair).findFirst().orElse(Optional.empty());
     }
 
     private static boolean isDropOperation() { return Screen.hasAltDown(); }
 
-    private static Optional<InvTweaksOperationType.Nature> getOperationNature(int pressedButton) {
-        InvTweaksOperationType.Nature operationNature = InvTweaksOperationType.Nature.IGNORE;
+    private static Optional<OperationNature> getOperationNature(int pressedButton) {
+        OperationNature operationNature = OperationNature.IGNORE;
         boolean drop = isDropOperation();
 
         return switch (pressedButton) {
             case GLFW.GLFW_MOUSE_BUTTON_MIDDLE ->
-                    Optional.of(InvTweaksOperationType.Nature.SORT);
+                    Optional.of(OperationNature.SORT);
             case GLFW.GLFW_MOUSE_BUTTON_LEFT, GLFW.GLFW_MOUSE_BUTTON_RIGHT ->
                     Optional.of(
                             drop ?
-                                    InvTweaksOperationType.Nature.DROP :
-                                    InvTweaksOperationType.Nature.MOVE
+                                    OperationNature.DROP :
+                                    OperationNature.MOVE
                     );
-            default -> Optional.of(InvTweaksOperationType.Nature.IGNORE);
+            default -> Optional.of(OperationNature.IGNORE);
         };
     }
 
-    private static Optional<InvTweaksOperationType.Modifier> getOperationModifier(int pressedButton) {
-        boolean appliesToOne = Screen.hasControlDown() && !Screen.hasShiftDown();
-        boolean appliesToSameType = Screen.hasControlDown() && Screen.hasShiftDown();
-        boolean appliesToStack = !Screen.hasControlDown() && Screen.hasShiftDown();
-        boolean appliesToAll = !Screen.hasControlDown() && !Screen.hasShiftDown() && isKeyPressed(GLFW.GLFW_KEY_SPACE);
+    private static Optional<OperationModifier> getOperationModifier(int pressedButton) {
+        boolean appliesToOne = OperationModifier.ONE.applies();
+        boolean appliesToSameType = OperationModifier.ALL_SAME_TYPE.applies();
+        boolean appliesToStack = OperationModifier.STACK.applies();
+        boolean appliesToAll = OperationModifier.ALL.applies();
 
         if (!assertOnlyOneBool(appliesToOne, appliesToSameType, appliesToStack, appliesToAll)) {
             warnPlayer("Unknown combination pressed: applyToOne=" + appliesToOne + ", applyToSameType=" + appliesToSameType + ", applyToStack=" + appliesToStack + ", applyToAll=" + appliesToAll);
             return Optional.empty();
         }
 
-        if (appliesToOne) return Optional.of(InvTweaksOperationType.Modifier.ONE);
-        if (appliesToSameType) return Optional.of(InvTweaksOperationType.Modifier.ALL_SAME_TYPE);
-        if (appliesToStack) return Optional.of(InvTweaksOperationType.Modifier.STACK);
-        if (appliesToAll) return Optional.of(InvTweaksOperationType.Modifier.ALL);
+        if (appliesToOne) return Optional.of(OperationModifier.ONE);
+        if (appliesToSameType) return Optional.of(OperationModifier.ALL_SAME_TYPE);
+        if (appliesToStack) return Optional.of(OperationModifier.STACK);
+        if (appliesToAll) return Optional.of(OperationModifier.ALL);
 
         boolean drop = isDropOperation();
         boolean isMoveUpOrDown = KeyUtils.isKeyPressed(GLFW.GLFW_KEY_W) || KeyUtils.isKeyPressed(GLFW.GLFW_KEY_S);
 
         boolean stackIsTheNormal = drop || isMoveUpOrDown;
 
-        return Optional.of(stackIsTheNormal ? InvTweaksOperationType.Modifier.STACK : InvTweaksOperationType.Modifier.NORMAL);
+        return Optional.of(stackIsTheNormal ? OperationModifier.STACK : OperationModifier.NORMAL);
     }
 }
