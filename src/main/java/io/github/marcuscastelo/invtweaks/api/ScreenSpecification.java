@@ -1,6 +1,6 @@
 package io.github.marcuscastelo.invtweaks.api;
 
-import io.github.marcuscastelo.invtweaks.client.behavior.IInvTweaksBehavior;
+import io.github.marcuscastelo.invtweaks.behavior.IInvTweaksBehavior;
 import net.minecraft.screen.ScreenHandler;
 
 public final class ScreenSpecification {

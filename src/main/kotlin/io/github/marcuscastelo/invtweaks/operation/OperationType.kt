@@ -1,6 +1,6 @@
 package io.github.marcuscastelo.invtweaks.operation
 
-import io.github.marcuscastelo.invtweaks.client.behavior.IInvTweaksBehavior
+import io.github.marcuscastelo.invtweaks.behavior.IInvTweaksBehavior
 import java.util.Optional;
 
 
@@ -52,13 +52,13 @@ enum class OperationType(val nature: OperationNature, val modifier: OperationMod
                 Optional.of(OperationExecutor { function(it) })
 
         return when (this.nature) {
-            OperationNature.IGNORE -> Optional.empty();
+            OperationNature.IGNORE -> Optional.empty()
             OperationNature.SORT -> when (this.modifier) {
-                OperationModifier.NORMAL -> cast(behavior::sort); // TODO: sort
-                OperationModifier.ONE -> cast(behavior::sort); // TODO: sort one
-                OperationModifier.STACK -> cast(behavior::sort); // TODO: sort stack
-                OperationModifier.ALL -> cast(behavior::sort); // TODO: sort all
-                OperationModifier.ALL_SAME_TYPE -> cast(behavior::sort); // TODO: sort all same type
+                OperationModifier.NORMAL -> cast(behavior::sort) // TODO: sort
+                OperationModifier.ONE -> cast(behavior::sort) // TODO: sort one
+                OperationModifier.STACK -> cast(behavior::sort) // TODO: sort stack
+                OperationModifier.ALL -> cast(behavior::sort) // TODO: sort all
+                OperationModifier.ALL_SAME_TYPE -> cast(behavior::sort) // TODO: sort all same type
             }
             OperationNature.DROP -> when (this.modifier) {
                 OperationModifier.NORMAL -> Optional.empty()
@@ -66,21 +66,21 @@ enum class OperationType(val nature: OperationNature, val modifier: OperationMod
                 OperationModifier.ONE -> cast(behavior::dropOne)
                 OperationModifier.STACK -> cast(behavior::dropStack)
                 OperationModifier.ALL_SAME_TYPE -> cast(behavior::dropAllSameType)
-            };
+            }
             OperationNature.MOVE -> when (this.modifier) {
                 OperationModifier.NORMAL -> Optional.empty()
                 OperationModifier.ALL -> cast(behavior::moveAll)
                 OperationModifier.ONE -> cast(behavior::moveOne)
                 OperationModifier.STACK -> cast(behavior::moveStack)
                 OperationModifier.ALL_SAME_TYPE -> cast(behavior::moveAllSameType)
-            };
+            }
             OperationNature.CRAFT -> when (this.modifier) {
                 OperationModifier.NORMAL -> Optional.empty()
                 OperationModifier.ALL -> cast(behavior::craftAll)
                 OperationModifier.ONE -> cast(behavior::craftOne)
                 OperationModifier.STACK -> cast(behavior::craftStack)
                 OperationModifier.ALL_SAME_TYPE -> cast(behavior::craftAllSameType)
-            };
+            }
         }
     }
 }

@@ -1,10 +1,10 @@
 package io.github.marcuscastelo.invtweaks.registry;
 
+import io.github.marcuscastelo.invtweaks.behavior.*;
 import io.github.marcuscastelo.invtweaks.operation.OperationExecutor;
 import io.github.marcuscastelo.invtweaks.operation.OperationInfo;
 import io.github.marcuscastelo.invtweaks.api.ScreenInventoriesSpecification;
 import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
-import io.github.marcuscastelo.invtweaks.client.behavior.*;
 import io.github.marcuscastelo.invtweaks.operation.OperationResult;
 import net.minecraft.screen.*;
 
