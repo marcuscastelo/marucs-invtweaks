@@ -1,6 +1,7 @@
 package io.github.marcuscastelo.invtweaks.mixin;
 
 import com.google.common.collect.Streams;
+import io.github.marcuscastelo.invtweaks.InvTweaksMod;
 import io.github.marcuscastelo.invtweaks.operation.*;
 import io.github.marcuscastelo.invtweaks.config.InvtweaksConfig;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventories;
@@ -22,6 +23,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 import static io.github.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer;
@@ -129,6 +131,8 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         invs.allInvs().forEach(inv -> warnPlayer(inv.getClass().getName()));
     }
 
+    ArrayList<OperationInfo> queuedOperations = new ArrayList<>();
+
     @Inject(method = "onMouseClick(Lnet/minecraft/screen/slot/Slot;IILnet/minecraft/screen/slot/SlotActionType;)V", at = @At("HEAD"), cancellable = true)
     protected void onMouseClick(Slot slot, int invSlot, int pressedButton, SlotActionType actionType, CallbackInfo ci) {
         //In case of clicking outside of inventory, just ignore
@@ -177,6 +181,10 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
 
         try {
             OperationResult result = InvTweaksBehaviorRegistry.executeOperation(handler.getClass(), operationInfo);
+
+            queuedOperations.addAll(result.getNextOperations());
+
+
             if (result.success()) {
                 ci.cancel();
             }
@@ -251,5 +259,31 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         boolean stackIsTheNormal = drop || isMoveUpOrDown;
 
         return Optional.of(stackIsTheNormal ? OperationModifier.STACK : OperationModifier.NORMAL);
+    }
+
+    @Inject(at = @At("HEAD"), method = "tick", cancellable = true)
+    public void tick(CallbackInfo ci) {
+        if (queuedOperations.isEmpty()) return;
+
+        OperationInfo operationInfo = queuedOperations.remove(0);
+        InvTweaksMod.LOGGER.info("Executing queued operation: " + operationInfo);
+
+        try {
+            OperationResult result = InvTweaksBehaviorRegistry.executeOperation(handler.getClass(), operationInfo);
+
+            queuedOperations.addAll(result.getNextOperations());
+
+            if (result.success()) {
+                ci.cancel();
+            }
+        } catch (IllegalArgumentException e) {
+//            warnPlayer("Operation not supported: " + e.getMessage());
+//            warnPlayer("Operation info: " + operationInfo);
+//            warnPlayer("Operation type: " + operationInfo.getOperationType());
+//            warnPlayer("Clicked slot: " + operationInfo.getClickedSlot());
+//            warnPlayer("Clicked inventory: " + operationInfo.getClickedInventory());
+//            warnPlayer("Other inventory: " + operationInfo.getTargetInventory());
+//            warnPlayer("Handler: " + handler);
+        }
     }
 }

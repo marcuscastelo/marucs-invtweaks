@@ -99,7 +99,7 @@ class InvtweaksScreenController(private val handler: ScreenHandler) {
 
     fun getStack(slot: Int): ItemStack {
         return handler.stacks[slot]
-        //        return handler.getSlot(slot).getStack().copy();
+//                return handler.getSlot(slot).getStack().copy();
     }
 
     private fun leftClick(slot: Int, actionType: SlotActionType) {
