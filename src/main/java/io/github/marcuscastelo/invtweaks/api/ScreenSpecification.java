@@ -4,11 +4,6 @@ import io.github.marcuscastelo.invtweaks.behavior.IInvTweaksBehavior;
 import net.minecraft.screen.ScreenHandler;
 
 public final class ScreenSpecification {
-    protected final Class<? extends ScreenHandler> handlerClass;
-    public Class<? extends ScreenHandler> getHandlerClass() {
-        return handlerClass;
-    }
-
     public IInvTweaksBehavior getInvTweaksBehavior() {
         return invTweaksBehavior;
     }
@@ -20,13 +15,13 @@ public final class ScreenSpecification {
     protected IInvTweaksBehavior invTweaksBehavior;
     protected ScreenInventoriesSpecification inventoriesSpecification;
 
-    private ScreenSpecification(Class<? extends ScreenHandler> handlerClass) {
-        this.handlerClass = handlerClass;
+    private ScreenSpecification() {
+
     }
 
     public static class Builder {
         ScreenSpecification si;
-        public Builder(Class<? extends ScreenHandler> screenHandlerClass) { si = new ScreenSpecification(screenHandlerClass); }
+        public Builder() { si = new ScreenSpecification(); }
 
         public Builder withInventoriesSpecification(ScreenInventoriesSpecification screenInventoriesSpecification) { si.inventoriesSpecification = screenInventoriesSpecification; return this; }
         public Builder withBehavior(IInvTweaksBehavior behavior) { si.invTweaksBehavior = behavior; return this; }
