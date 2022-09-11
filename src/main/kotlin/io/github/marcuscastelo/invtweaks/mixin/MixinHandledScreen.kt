@@ -4,6 +4,8 @@ import com.google.common.collect.Streams
 import io.github.marcuscastelo.invtweaks.InvTweaksMod
 import io.github.marcuscastelo.invtweaks.config.InvtweaksConfig
 import io.github.marcuscastelo.invtweaks.config.InvtweaksConfig.OverflowMode
+import io.github.marcuscastelo.invtweaks.input.InputProvider
+import io.github.marcuscastelo.invtweaks.input.OperationTypeInterpreter
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventories
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory
 import io.github.marcuscastelo.invtweaks.operation.OperationInfo
@@ -41,6 +43,7 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
 
     @Shadow
     abstract fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean
+
     private var _middleClickBypass = false
     private fun isBypassActive() = _middleClickBypass
 
@@ -164,7 +167,8 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
             warnPlayer("Clicked SI = $clickedSI")
             warnPlayer("Target SI = $targetSI")
         }
-        val operationType_: Optional<OperationType> = getOperationType(pressedButton)
+        val inputProvider = InputProvider(pressedButton)
+        val operationType_: Optional<OperationType> = OperationTypeInterpreter.interpret(inputProvider)
         if (operationType_.map { obj: OperationType -> obj.isIgnore() }.orElse(false)) return
         val operationType = operationType_.orElseThrow()
         val operationInfo = OperationInfo(operationType, slot, clickedSI, targetSI!!, screenInvs)
@@ -183,57 +187,6 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
             warnPlayer("Other inventory: $targetSI")
             warnPlayer("Handler: $handler")
         }
-    }
-
-    private fun assertOnlyOneBool(vararg booleans: Boolean): Boolean {
-        var count = 0
-        for (b in booleans) {
-            if (b) count++
-            if (count > 1) return false
-        }
-        return true
-    }
-
-    //TODO: Make this a config option
-    private fun getOperationType(pressedButton: Int): Optional<OperationType> {
-        val nature = getOperationNature(pressedButton).orElse(null)
-        val target = getOperationModifier(pressedButton).orElse(null)
-        return OperationType.fromPair(nature, target)
-    }
-
-    private fun isDropOperation(): Boolean {
-        return Screen.hasAltDown()
-    }
-
-    private fun getOperationNature(pressedButton: Int): Optional<OperationNature> {
-        val operationNature = OperationNature.IGNORE
-        val drop: Boolean = isDropOperation()
-        return when (pressedButton) {
-            GLFW.GLFW_MOUSE_BUTTON_MIDDLE -> Optional.of(OperationNature.SORT)
-            GLFW.GLFW_MOUSE_BUTTON_LEFT, GLFW.GLFW_MOUSE_BUTTON_RIGHT -> Optional.of(
-                    if (drop) OperationNature.DROP else OperationNature.MOVE
-            )
-            else -> Optional.of(OperationNature.IGNORE)
-        }
-    }
-
-    private fun getOperationModifier(pressedButton: Int): Optional<OperationModifier> {
-        val appliesToOne = OperationModifier.ONE.applies()
-        val appliesToSameType = OperationModifier.ALL_SAME_TYPE.applies()
-        val appliesToStack = OperationModifier.STACK.applies()
-        val appliesToAll = OperationModifier.ALL.applies()
-        if (!assertOnlyOneBool(appliesToOne, appliesToSameType, appliesToStack, appliesToAll)) {
-            warnPlayer("Unknown combination pressed: applyToOne=$appliesToOne, applyToSameType=$appliesToSameType, applyToStack=$appliesToStack, applyToAll=$appliesToAll")
-            return Optional.empty()
-        }
-        if (appliesToOne) return Optional.of(OperationModifier.ONE)
-        if (appliesToSameType) return Optional.of(OperationModifier.ALL_SAME_TYPE)
-        if (appliesToStack) return Optional.of(OperationModifier.STACK)
-        if (appliesToAll) return Optional.of(OperationModifier.ALL)
-        val drop: Boolean = isDropOperation()
-        val isMoveUpOrDown = isKeyPressed(GLFW.GLFW_KEY_W) || isKeyPressed(GLFW.GLFW_KEY_S)
-        val stackIsTheNormal = drop || isMoveUpOrDown
-        return Optional.of(if (stackIsTheNormal) OperationModifier.STACK else OperationModifier.NORMAL)
     }
 
     @Inject(at = [At("HEAD")], method = ["tick"])
