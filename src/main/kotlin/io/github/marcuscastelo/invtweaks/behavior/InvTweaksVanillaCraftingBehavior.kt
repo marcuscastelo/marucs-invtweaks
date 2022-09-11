@@ -11,8 +11,11 @@ import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.fai
 
 
 import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.SUCCESS
+import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.pass
+import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.success
 import io.github.marcuscastelo.invtweaks.operation.OperationType
 import io.github.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer
+import io.github.marcuscastelo.invtweaks.util.InventoryUtils
 import io.github.marcuscastelo.invtweaks.util.InvtweaksScreenController
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
@@ -137,8 +140,9 @@ class InvTweaksVanillaCraftingBehavior : InvTweaksVanillaGenericBehavior() {
         if (operationInfo.clickedSlot.id in craftingGridSI.start..craftingGridSI.end) {
             warnPlayer("AAA ${operationInfo.clickedSlot.id} ${craftingGridSI.start} ${craftingGridSI.end}")
             spreadItemsInPlace(craftingGridSI)
+            return success("Spread items in place")
         }
-        return SUCCESS
+        return super.sort(operationInfo)
     }
 
     override fun moveAll(operationInfo: OperationInfo): OperationResult {
@@ -302,30 +306,28 @@ class InvTweaksVanillaCraftingBehavior : InvTweaksVanillaGenericBehavior() {
         )
 
         return OperationResult(
-                success = true,
+                success = OperationResult.SuccessType.SUCCESS,
                 message = "Crafted ${handler.slots[RESULT_SLOT].stack.item.name.string}",
                 nextOperations = listOf(operationInfo)
         )
     }
 
     override fun moveAllSameType(operationInfo: OperationInfo): OperationResult {
-        // If the result slot is a common slot, then we can just use the default implementation
-        if (operationInfo.clickedSlot.id != RESULT_SLOT) {
-            return super.moveAllSameType(operationInfo)
+        // If the result slot is an output slot, we're mass crafting
+        if (InventoryUtils.isCraftingOutputSlot(operationInfo.clickedSlot)) {
+            RESULT_SLOT = operationInfo.clickedSlot.id // TODO: remove RESULT_SLOT completely
+            return massCraft(operationInfo)
         }
 
-        return when(operationInfo.clickedSlot.id) {
-            RESULT_SLOT -> massCraft(operationInfo)
-            else -> super.moveAllSameType(operationInfo)
-        }
+        return super.moveAllSameType(operationInfo)
     }
 
     override fun dropAllSameType(operationInfo: OperationInfo): OperationResult {
-        val RESULT_SLOT = 0
-        if (operationInfo.clickedSlot.id != RESULT_SLOT) {
-            super.dropAllSameType(operationInfo)
-        }
-        return SUCCESS
+//        val RESULT_SLOT = 0
+//        if (operationInfo.clickedSlot.id != RESULT_SLOT) {
+//            super.dropAllSameType(operationInfo)
+//        }
+        return pass("Not implemented")
     }
 
     override fun moveOne(operationInfo: OperationInfo): OperationResult {
@@ -350,6 +352,6 @@ class InvTweaksVanillaCraftingBehavior : InvTweaksVanillaGenericBehavior() {
     }
 
     companion object {
-        private const val RESULT_SLOT = 0
+        private var RESULT_SLOT = 0
     }
 }

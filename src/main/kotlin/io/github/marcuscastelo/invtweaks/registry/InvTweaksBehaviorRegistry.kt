@@ -3,14 +3,12 @@ package io.github.marcuscastelo.invtweaks.registry
 import io.github.marcuscastelo.invtweaks.InvTweaksMod
 import io.github.marcuscastelo.invtweaks.api.ScreenInventoriesSpecification
 import io.github.marcuscastelo.invtweaks.api.ScreenSpecification
-import io.github.marcuscastelo.invtweaks.behavior.InvTweaksVanillaCraftingBehavior
-import io.github.marcuscastelo.invtweaks.behavior.InvTweaksVanillaGenericBehavior
-import io.github.marcuscastelo.invtweaks.behavior.InvTweaksVanillaMerchantBehavior
-import io.github.marcuscastelo.invtweaks.behavior.InvTweaksVanillaPlayerBehaviour
+import io.github.marcuscastelo.invtweaks.behavior.*
 import io.github.marcuscastelo.invtweaks.operation.OperationInfo
 import io.github.marcuscastelo.invtweaks.operation.OperationResult
 import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.FAILURE
 import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.failure
+import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.pass
 import net.minecraft.screen.*
 
 object InvTweaksBehaviorRegistry {
@@ -35,7 +33,7 @@ object InvTweaksBehaviorRegistry {
 
         return executor?.execute(operationInfo) ?: run {
             InvTweaksMod.LOGGER.warn("<InvTweaksBehaviorRegistry> Operation " + operationInfo.type + " is not supported by " + behavior.javaClass)
-            failure("Operation " + operationInfo.type + " is not supported by " + behavior.javaClass)
+            pass("Operation " + operationInfo.type + " is not supported by " + behavior.javaClass)
         }
     }
 
@@ -67,7 +65,6 @@ object InvTweaksBehaviorRegistry {
         register(buildVanillaGeneric(FurnaceScreenHandler::class.java))
         register(buildVanillaGeneric(SmokerScreenHandler::class.java))
         register(buildVanillaGeneric(BlastFurnaceScreenHandler::class.java))
-        register(buildVanillaGeneric(EnchantmentScreenHandler::class.java))
         register(buildVanillaGeneric(AnvilScreenHandler::class.java))
         register(buildVanillaGeneric(CartographyTableScreenHandler::class.java))
         register(buildVanillaGeneric(LoomScreenHandler::class.java))
@@ -86,6 +83,8 @@ object InvTweaksBehaviorRegistry {
         //Merchant behaviour
         register(createSpecsBuilder(MerchantScreenHandler::class.java).withBehavior(InvTweaksVanillaMerchantBehavior()).build())
 
+        //Enchantment behaviour
+        register(createSpecsBuilder(EnchantmentScreenHandler::class.java).withBehavior(EnchantingTableBehavior()).build())
 
         //Crafting behaviour
         register(createSpecsBuilder(CraftingScreenHandler::class.java).withBehavior(InvTweaksVanillaCraftingBehavior()).build())

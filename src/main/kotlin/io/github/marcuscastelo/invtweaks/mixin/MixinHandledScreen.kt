@@ -20,6 +20,7 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.slot.Slot
 import net.minecraft.screen.slot.SlotActionType
+import net.minecraft.sound.SoundEvents
 import org.lwjgl.glfw.GLFW
 import org.spongepowered.asm.mixin.Final
 import org.spongepowered.asm.mixin.Mixin
@@ -174,7 +175,9 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
 
         try {
             val result = executeAndQueueOperation(operationInfo)
-            if (result.success) ci.cancel()
+            if (result.success == OperationResult.SuccessType.SUCCESS) {
+                ci.cancel()
+            }
         } catch (e: IllegalArgumentException) {
             warnPlayer("Operation not supported: " + e.message)
             warnPlayer("Operation info: $operationInfo")
@@ -199,6 +202,15 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
         LOGGER.info("Executing queued operation: $operationInfo")
         val result = executeOperation(handler.javaClass, operationInfo)
         result.nextOperations.forEach(Consumer { e: OperationInfo? -> queuedOperations.add(e!!) })
+        when (result.success) {
+            OperationResult.SuccessType.SUCCESS -> MinecraftClient.getInstance().player!!.playSound(SoundEvents.BLOCK_CHAIN_PLACE, 1.8f, 0.8f + MinecraftClient.getInstance().world!!.random.nextFloat() * 0.4f)
+            OperationResult.SuccessType.FAILURE -> MinecraftClient.getInstance().player!!.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.8f, 0.8f + MinecraftClient.getInstance().world!!.random.nextFloat() * 0.4f)
+            OperationResult.SuccessType.PASS -> {}
+        }
+
+        if (result.success != OperationResult.SuccessType.PASS && result.message.isNotEmpty()) {
+            warnPlayer("${result.success}: ${result.message}")
+        }
         return result
     }
 }

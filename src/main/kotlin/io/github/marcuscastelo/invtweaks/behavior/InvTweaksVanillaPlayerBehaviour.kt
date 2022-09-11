@@ -4,6 +4,8 @@ import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory
 import io.github.marcuscastelo.invtweaks.operation.OperationInfo
 import io.github.marcuscastelo.invtweaks.operation.OperationResult
 import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.FAILURE
+import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.failure
+import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.pass
 import io.github.marcuscastelo.invtweaks.util.KeyUtils.isKeyPressed
 import net.minecraft.item.ItemStack
 import net.minecraft.screen.PlayerScreenHandler
@@ -37,6 +39,10 @@ class InvTweaksVanillaPlayerBehaviour : InvTweaksVanillaGenericBehavior() {
     }
 
     override fun moveAllSameType(operationInfo: OperationInfo): OperationResult {
+        if (operationInfo.clickedSlot.id == 0) {
+            return InvTweaksVanillaCraftingBehavior().moveAllSameType(operationInfo)
+        }
+
         return super.moveAllSameType(operationInfo)
     }
 
@@ -57,10 +63,10 @@ class InvTweaksVanillaPlayerBehaviour : InvTweaksVanillaGenericBehavior() {
     }
 
     fun isMoveableToArmorSlot(operationInfo: OperationInfo, itemStack: ItemStack?): Boolean {
-        val screenHandler = operationInfo.clickedSI.screenHandler as? PlayerScreenHandler ?: return false
-        val (_, start, end) = ScreenInventory(screenHandler, 5, 8)
+        val screenHandler = operationInfo.clickedSI.screenHandler
+        val armorInv = ScreenInventory(screenHandler, 5, 8)
         var moveableToArmorInv = false
-        for (slotId in start..end) {
+        for (slotId in armorInv.slotRange) {
             val slot = screenHandler.getSlot(slotId)
             if (slot.stack.isEmpty && slot.canInsert(itemStack)) {
                 moveableToArmorInv = true
@@ -71,16 +77,18 @@ class InvTweaksVanillaPlayerBehaviour : InvTweaksVanillaGenericBehavior() {
     }
 
     override fun moveStack(operationInfo: OperationInfo): OperationResult {
+
+
+
         var operationInfo = operationInfo
         val itemStack = operationInfo.clickedSlot.stack
         val screenHandler = operationInfo.clickedSI.screenHandler
         assert(screenHandler is PlayerScreenHandler)
         //Keep the same behavior for armor
-        val isDownwardsMovement = isKeyPressed(GLFW.GLFW_KEY_S)
+        val isTrendedMovement = isKeyPressed(GLFW.GLFW_KEY_S) || isKeyPressed(GLFW.GLFW_KEY_W)
         val isClickInArmorOrCraft = operationInfo.clickedSI.start <= 8
-        if (!isDownwardsMovement && isMoveableToArmorSlot(operationInfo, itemStack) && !isClickInArmorOrCraft) {
-            val armorInv = ScreenInventory(screenHandler, 5, 8)
-            operationInfo = OperationInfo(operationInfo.type, operationInfo.clickedSlot, operationInfo.clickedSI, armorInv, operationInfo.otherInventories)
+        if (!isTrendedMovement && isMoveableToArmorSlot(operationInfo, itemStack) && !isClickInArmorOrCraft) {
+            return pass("Using vanilla behavior for armor")
         }
 
 //            int clickedSlotId = operationInfo.clickedSlot().id;
