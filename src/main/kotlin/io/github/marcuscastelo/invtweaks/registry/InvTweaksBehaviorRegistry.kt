@@ -74,7 +74,6 @@ object InvTweaksBehaviorRegistry {
         register(buildVanillaGeneric(SmithingScreenHandler::class.java))
         register(buildVanillaGeneric(GrindstoneScreenHandler::class.java))
         register(buildVanillaGeneric(HorseScreenHandler::class.java))
-        register(buildVanillaGeneric(StonecutterScreenHandler::class.java))
         val playerScreenInvSpecs = ScreenInventoriesSpecification(true, 27, 9)
         register(
                 createSpecsBuilder(PlayerScreenHandler::class.java)
@@ -90,5 +89,6 @@ object InvTweaksBehaviorRegistry {
 
         //Crafting behaviour
         register(createSpecsBuilder(CraftingScreenHandler::class.java).withBehavior(InvTweaksVanillaCraftingBehavior()).build())
+        register(createSpecsBuilder(StonecutterScreenHandler::class.java).withBehavior(InvTweaksVanillaCraftingBehavior()).build())
     }
 }

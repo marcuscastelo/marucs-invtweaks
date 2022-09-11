@@ -19,10 +19,6 @@ import net.minecraft.item.ItemStack
 import net.minecraft.screen.CraftingScreenHandler
 
 class InvTweaksVanillaCraftingBehavior : InvTweaksVanillaGenericBehavior() {
-    private fun isCraftingInv(screenInventory: ScreenInventory): Boolean {
-        return screenInventory.start == 0 && screenInventory.screenHandler is CraftingScreenHandler
-    }
-
     fun getCurrentRecipeStacks(gridSI: ScreenInventory): Array<ItemStack?> {
         val recipe = arrayOfNulls<ItemStack>(gridSI.size)
         var recipeIndex = 0
@@ -94,7 +90,7 @@ class InvTweaksVanillaCraftingBehavior : InvTweaksVanillaGenericBehavior() {
     private fun spreadItemsInPlace(gridSI: ScreenInventory) {
         val handler = gridSI.screenHandler
         val screenController = InvtweaksScreenController(handler)
-        val currentRecipeStacks = getCurrentRecipeStacks(gridSI)
+        val currentRecipeStacks = getCurrentRecipeStacks(gridSI) // TODO: use Recipe class
         val itemCountInfo = countItemsOnRecipeStacks(currentRecipeStacks)
         val itemCountsPerSlot = calcSpreadItemCountPerSlot(itemCountInfo)
         val targetRecipeStacks = createTargetSpreadRecipeStacks(currentRecipeStacks, itemCountInfo, itemCountsPerSlot)

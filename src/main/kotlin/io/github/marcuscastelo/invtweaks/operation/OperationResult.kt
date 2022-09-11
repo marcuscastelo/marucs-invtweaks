@@ -5,10 +5,6 @@ class OperationResult(
         val message: String = "",
         val nextOperations: Iterable<OperationInfo> = listOf()
 ) {
-    fun success(): Boolean {
-        return success
-    }
-
     companion object {
         val SUCCESS = OperationResult(true, "")
         val FAILURE = OperationResult(false, "")
@@ -20,5 +16,9 @@ class OperationResult(
         fun failure(message: String): OperationResult {
             return OperationResult(false, message)
         }
+    }
+
+    override fun toString(): String {
+        return "OperationResult(success=$success, message='$message', nextOperations=$nextOperations)"
     }
 }

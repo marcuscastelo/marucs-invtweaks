@@ -1,7 +1,7 @@
 package io.github.marcuscastelo.invtweaks.mixin
 
-import com.google.common.collect.Streams
 import io.github.marcuscastelo.invtweaks.InvTweaksMod
+import io.github.marcuscastelo.invtweaks.InvTweaksMod.LOGGER
 import io.github.marcuscastelo.invtweaks.config.InvtweaksConfig
 import io.github.marcuscastelo.invtweaks.config.InvtweaksConfig.OverflowMode
 import io.github.marcuscastelo.invtweaks.input.InputProvider
@@ -9,15 +9,13 @@ import io.github.marcuscastelo.invtweaks.input.OperationTypeInterpreter
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventories
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory
 import io.github.marcuscastelo.invtweaks.operation.OperationInfo
-import io.github.marcuscastelo.invtweaks.operation.OperationModifier
-import io.github.marcuscastelo.invtweaks.operation.OperationNature
+import io.github.marcuscastelo.invtweaks.operation.OperationResult
 import io.github.marcuscastelo.invtweaks.operation.OperationType
 import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry.executeOperation
 import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry.isScreenSupported
 import io.github.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer
 import io.github.marcuscastelo.invtweaks.util.KeyUtils.isKeyPressed
 import net.minecraft.client.MinecraftClient
-import net.minecraft.client.gui.screen.Screen
 import net.minecraft.client.gui.screen.ingame.HandledScreen
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.slot.Slot
@@ -168,16 +166,12 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
             warnPlayer("Target SI = $targetSI")
         }
         val inputProvider = InputProvider(pressedButton)
-        val operationType_: Optional<OperationType> = OperationTypeInterpreter.interpret(inputProvider)
-        if (operationType_.map { obj: OperationType -> obj.isIgnore() }.orElse(false)) return
-        val operationType = operationType_.orElseThrow()
+        val operationType = OperationTypeInterpreter.interpret(inputProvider).orElse(null) ?: return
         val operationInfo = OperationInfo(operationType, slot, clickedSI, targetSI!!, screenInvs)
+
         try {
-            val result = executeOperation(handler.javaClass, operationInfo)
-            result.nextOperations.forEach(Consumer { e: OperationInfo? -> queuedOperations.add(e!!) })
-            if (result.success()) {
-                ci.cancel()
-            }
+            val result = executeAndQueueOperation(operationInfo)
+            if (result.success) ci.cancel()
         } catch (e: IllegalArgumentException) {
             warnPlayer("Operation not supported: " + e.message)
             warnPlayer("Operation info: $operationInfo")
@@ -193,11 +187,15 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
     open fun tick(ci: CallbackInfo?) {
         if (queuedOperations.isEmpty()) return
         val operationInfo = queuedOperations.removeAt(0)
-        InvTweaksMod.LOGGER.info("Executing queued operation: $operationInfo")
-        try {
-            val result = executeOperation(handler.javaClass, operationInfo)
-            result.nextOperations.forEach(Consumer { e: OperationInfo? -> queuedOperations.add(e!!) })
-        } catch (ignored: IllegalArgumentException) {
-        }
+
+        executeAndQueueOperation(operationInfo)
+        //FIXME: try-catch here?
+    }
+
+    private fun executeAndQueueOperation(operationInfo: OperationInfo): OperationResult {
+        LOGGER.info("Executing queued operation: $operationInfo")
+        val result = executeOperation(handler.javaClass, operationInfo)
+        result.nextOperations.forEach(Consumer { e: OperationInfo? -> queuedOperations.add(e!!) })
+        return result
     }
 }

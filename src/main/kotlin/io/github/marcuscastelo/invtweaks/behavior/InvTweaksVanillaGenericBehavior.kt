@@ -1,15 +1,22 @@
 package io.github.marcuscastelo.invtweaks.behavior
 
+import io.github.marcuscastelo.invtweaks.InvTweaksMod
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory
 import io.github.marcuscastelo.invtweaks.operation.OperationInfo
 import io.github.marcuscastelo.invtweaks.operation.OperationResult
 import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.FAILURE
 import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.SUCCESS
+import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.failure
 import net.minecraft.client.MinecraftClient
+import net.minecraft.inventory.CraftingInventory
+import net.minecraft.inventory.CraftingResultInventory
 import net.minecraft.item.Item
 import net.minecraft.item.Items
 import net.minecraft.screen.ScreenHandler
+import net.minecraft.screen.slot.CraftingResultSlot
+import net.minecraft.screen.slot.Slot
 import net.minecraft.screen.slot.SlotActionType
+import net.minecraft.sound.SoundEvents
 import net.minecraft.util.math.MathHelper
 
 open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
@@ -205,6 +212,18 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
     }
 
     override fun moveStack(operationInfo: OperationInfo): OperationResult {
+        fun isCraftingOutputSlot(slot: Slot): Boolean {
+            return slot is CraftingResultSlot || slot.inventory is CraftingResultInventory
+        }
+
+        InvTweaksMod.LOGGER.info("moveStack in ${operationInfo.clickedSI.screenHandler}")
+        InvTweaksMod.LOGGER.info("clickedSlot: ${operationInfo.clickedSlot}; class: ${operationInfo.clickedSlot.javaClass}")
+        if (isCraftingOutputSlot(operationInfo.clickedSlot)) {
+            //Play damage sound
+            MinecraftClient.getInstance().player!!.playSound(SoundEvents.BLOCK_AMETHYST_CLUSTER_HIT, 0.8f, 0.8f + MinecraftClient.getInstance().world!!.random.nextFloat() * 0.4f)
+            return failure("Crafting output slot not implemented")
+        }
+
         val handler = operationInfo.clickedSI.screenHandler
         val from = operationInfo.clickedSlot.id
         val stack = operationInfo.clickedSlot.stack
