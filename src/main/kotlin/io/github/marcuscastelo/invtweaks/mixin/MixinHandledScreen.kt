@@ -166,7 +166,10 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
             warnPlayer("Target SI = $targetSI")
         }
         val inputProvider = InputProvider(pressedButton)
-        val operationType = OperationTypeInterpreter.interpret(inputProvider).orElse(null) ?: return
+        val operationType = OperationTypeInterpreter.interpret(inputProvider) ?: run {
+            warnPlayer("Operation type is null!")
+            return
+        }
         val operationInfo = OperationInfo(operationType, slot, clickedSI, targetSI!!, screenInvs)
 
         try {

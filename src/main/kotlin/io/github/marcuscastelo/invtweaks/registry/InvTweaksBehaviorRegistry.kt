@@ -10,6 +10,7 @@ import io.github.marcuscastelo.invtweaks.behavior.InvTweaksVanillaPlayerBehaviou
 import io.github.marcuscastelo.invtweaks.operation.OperationInfo
 import io.github.marcuscastelo.invtweaks.operation.OperationResult
 import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.FAILURE
+import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.failure
 import net.minecraft.screen.*
 
 object InvTweaksBehaviorRegistry {
@@ -31,11 +32,10 @@ object InvTweaksBehaviorRegistry {
         require(isScreenSupported(screenHandlerClass)) { "Screen $screenHandlerClass doesn't have a behavior" }
         val behavior = getScreenSpecs(screenHandlerClass).invTweaksBehavior
         val executor = operationInfo.type.asOperationExecutor(behavior)
-        return if (executor.isPresent) {
-            executor.get().execute(operationInfo)
-        } else {
+
+        return executor?.execute(operationInfo) ?: run {
             InvTweaksMod.LOGGER.warn("<InvTweaksBehaviorRegistry> Operation " + operationInfo.type + " is not supported by " + behavior.javaClass)
-            FAILURE
+            failure("Operation " + operationInfo.type + " is not supported by " + behavior.javaClass)
         }
     }
 

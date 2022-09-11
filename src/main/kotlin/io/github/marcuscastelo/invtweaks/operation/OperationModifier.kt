@@ -9,8 +9,8 @@ enum class OperationModifier(val representation: String, private val checkHotkey
     STACK("STACK", { !Screen.hasControlDown() && Screen.hasShiftDown() }),
     ALL("ALL", { !Screen.hasControlDown() && !Screen.hasShiftDown() && isKeyPressed(GLFW.GLFW_KEY_SPACE) }),
     ALL_SAME_TYPE("ALL_SAME_TYPE", { Screen.hasControlDown() && Screen.hasShiftDown() }),
-    NORMAL("NORMAL", { !Screen.hasControlDown() && !Screen.hasShiftDown() && !isKeyPressed(GLFW.GLFW_KEY_SPACE) })
-
+    NORMAL("NORMAL", { !Screen.hasControlDown() && !Screen.hasShiftDown() && !isKeyPressed(GLFW.GLFW_KEY_SPACE) }),
+    IMPOSSIBLE("IMPOSSIBLE", { false });
     ;
 
     fun applies(): Boolean = checkHotkeyFun()
