@@ -1,6 +1,6 @@
 package io.github.marcuscastelo.invtweaks.behavior
 
-import io.github.marcuscastelo.invtweaks.InvTweaksMod.LOGGER
+import io.github.marcuscastelo.invtweaks.InvTweaksMod.Companion.LOGGER
 import io.github.marcuscastelo.invtweaks.crafting.InventoryAnalyzer
 import io.github.marcuscastelo.invtweaks.crafting.Recipe
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory
@@ -331,7 +331,7 @@ class InvTweaksVanillaCraftingBehavior : InvTweaksVanillaGenericBehavior() {
     }
 
     override fun moveOne(operationInfo: OperationInfo): OperationResult {
-        return FAILURE
+        return super.moveOne(operationInfo)
     }
 
     override fun dropOne(operationInfo: OperationInfo): OperationResult {

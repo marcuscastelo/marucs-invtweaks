@@ -1,7 +1,7 @@
 package io.github.marcuscastelo.invtweaks.mixin
 
 import io.github.marcuscastelo.invtweaks.InvTweaksMod
-import io.github.marcuscastelo.invtweaks.InvTweaksMod.LOGGER
+import io.github.marcuscastelo.invtweaks.InvTweaksMod.Companion.LOGGER
 import io.github.marcuscastelo.invtweaks.config.InvtweaksConfig
 import io.github.marcuscastelo.invtweaks.config.InvtweaksConfig.OverflowMode
 import io.github.marcuscastelo.invtweaks.input.InputProvider
