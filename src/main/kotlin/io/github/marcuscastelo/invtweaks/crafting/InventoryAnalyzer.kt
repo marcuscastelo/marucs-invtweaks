@@ -16,7 +16,20 @@ object InventoryAnalyzer {
         return itemCounts
     }
 
-    fun searchRecipeItems(resourceStacks: Iterable<ItemStack>, recipe: Recipe): List<ItemStack> {
-        return resourceStacks.filter { it.item in recipe.materials }
+    fun countSlots(stacks: Iterable<ItemStack>): Map<Item, Int> {
+        val slotCounts = mutableMapOf<Item, Int>()
+        for (stack in stacks) {
+            if (stack.isEmpty) continue
+            val item = stack.item
+
+            val count = slotCounts[item] ?: 0
+            slotCounts[item] = count + 1
+        }
+        return slotCounts
+    }
+
+    fun searchRecipeItems(resourceStacks: Iterable<ItemStack>, recipe: Recipe): Map<Item, Iterable<Int>> {
+        val entries = resourceStacks.mapIndexed(::Pair).filter { it.second.item in recipe.materials }
+        return entries.groupBy({ it.second.item }, { it.first })
     }
 }

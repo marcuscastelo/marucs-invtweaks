@@ -102,6 +102,12 @@ class InvtweaksScreenController(private val handler: ScreenHandler) {
 //                return handler.getSlot(slot).getStack().copy();
     }
 
+    fun dropHeldStack() {
+        if (isHoldingStack) {
+            leftClick(-999, SlotActionType.PICKUP)
+        }
+    }
+
     private fun leftClick(slot: Int, actionType: SlotActionType) {
         click(slot, 0, actionType)
     }
