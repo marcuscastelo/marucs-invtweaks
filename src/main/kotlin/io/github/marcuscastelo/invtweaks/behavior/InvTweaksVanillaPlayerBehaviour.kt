@@ -57,7 +57,7 @@ class InvTweaksVanillaPlayerBehaviour : InvTweaksVanillaGenericBehavior() {
     }
 
     fun isMoveableToArmorSlot(operationInfo: OperationInfo, itemStack: ItemStack?): Boolean {
-        val screenHandler = operationInfo.clickedSI().screenHandler() as? PlayerScreenHandler ?: return false
+        val screenHandler = operationInfo.clickedSI().screenHandler as? PlayerScreenHandler ?: return false
         val (_, start, end) = ScreenInventory(screenHandler, 5, 8)
         var moveableToArmorInv = false
         for (slotId in start..end) {
@@ -73,7 +73,7 @@ class InvTweaksVanillaPlayerBehaviour : InvTweaksVanillaGenericBehavior() {
     override fun moveStack(operationInfo: OperationInfo): OperationResult {
         var operationInfo = operationInfo
         val itemStack = operationInfo.clickedSlot().stack
-        val screenHandler = operationInfo.clickedSI().screenHandler()
+        val screenHandler = operationInfo.clickedSI().screenHandler
         assert(screenHandler is PlayerScreenHandler)
         //Keep the same behavior for armor
         val isDownwardsMovement = isKeyPressed(GLFW.GLFW_KEY_S)

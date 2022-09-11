@@ -181,9 +181,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
 
         try {
             OperationResult result = InvTweaksBehaviorRegistry.executeOperation(handler.getClass(), operationInfo);
-
-            queuedOperations.addAll(result.getNextOperations());
-
+            result.getNextOperations().forEach(queuedOperations::add);
 
             if (result.success()) {
                 ci.cancel();
@@ -261,29 +259,16 @@ public abstract class MixinHandledScreen<T extends ScreenHandler>{
         return Optional.of(stackIsTheNormal ? OperationModifier.STACK : OperationModifier.NORMAL);
     }
 
-    @Inject(at = @At("HEAD"), method = "tick", cancellable = true)
+    @Inject(at = @At("HEAD"), method = "tick")
     public void tick(CallbackInfo ci) {
         if (queuedOperations.isEmpty()) return;
-
         OperationInfo operationInfo = queuedOperations.remove(0);
         InvTweaksMod.LOGGER.info("Executing queued operation: " + operationInfo);
 
         try {
             OperationResult result = InvTweaksBehaviorRegistry.executeOperation(handler.getClass(), operationInfo);
-
-            queuedOperations.addAll(result.getNextOperations());
-
-            if (result.success()) {
-                ci.cancel();
-            }
-        } catch (IllegalArgumentException e) {
-//            warnPlayer("Operation not supported: " + e.getMessage());
-//            warnPlayer("Operation info: " + operationInfo);
-//            warnPlayer("Operation type: " + operationInfo.getOperationType());
-//            warnPlayer("Clicked slot: " + operationInfo.getClickedSlot());
-//            warnPlayer("Clicked inventory: " + operationInfo.getClickedInventory());
-//            warnPlayer("Other inventory: " + operationInfo.getTargetInventory());
-//            warnPlayer("Handler: " + handler);
+            result.getNextOperations().forEach(queuedOperations::add);
+        } catch (IllegalArgumentException ignored) {
         }
     }
 }

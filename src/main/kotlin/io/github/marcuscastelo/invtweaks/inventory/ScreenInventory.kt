@@ -8,5 +8,8 @@ data class ScreenInventory(val screenHandler: ScreenHandler, val start: Int, val
     //TODO: refactor all usages of those methods to use getEnd and getStart instead
     fun end() = end
     fun start() = start
-    fun screenHandler() = screenHandler
+
+    val slotRange = start..end
+    val slots get() = screenHandler.slots.subList(start, end + 1)
+    val stacks get() = screenHandler.stacks.subList(start, end + 1)
 }

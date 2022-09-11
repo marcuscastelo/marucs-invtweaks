@@ -2,30 +2,25 @@ package io.github.marcuscastelo.invtweaks.behavior
 
 import io.github.marcuscastelo.invtweaks.InvTweaksMod
 import io.github.marcuscastelo.invtweaks.InvTweaksMod.LOGGER
-import io.github.marcuscastelo.invtweaks.crafting.RecipeStacks
+import io.github.marcuscastelo.invtweaks.crafting.InventoryAnalyzer
+import io.github.marcuscastelo.invtweaks.crafting.Recipe
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory
 import io.github.marcuscastelo.invtweaks.operation.OperationInfo
 import io.github.marcuscastelo.invtweaks.operation.OperationResult
 import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.FAILURE
+import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.failure
+
+
 import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.SUCCESS
 import io.github.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer
 import io.github.marcuscastelo.invtweaks.util.InvtweaksScreenController
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.screen.CraftingScreenHandler
-import java.lang.Integer.min
 
 class InvTweaksVanillaCraftingBehavior : InvTweaksVanillaGenericBehavior() {
-    private data class CraftingSubScreenInvs(val resultSI: ScreenInventory, val gridSI: ScreenInventory)
-
     private fun isCraftingInv(screenInventory: ScreenInventory): Boolean {
-        return screenInventory.start() == 0 && screenInventory.screenHandler() is CraftingScreenHandler
-    }
-
-    private fun getCraftingSubScreenInvs(craftingSI: ScreenInventory): CraftingSubScreenInvs {
-        val resultSI = ScreenInventory(craftingSI.screenHandler(), 0, 0)
-        val gridSI = ScreenInventory(craftingSI.screenHandler(), 1, 9)
-        return CraftingSubScreenInvs(resultSI, gridSI)
+        return screenInventory.start() == 0 && screenInventory.screenHandler is CraftingScreenHandler
     }
 
     fun getCurrentRecipeStacks(gridSI: ScreenInventory): Array<ItemStack?> {
@@ -33,7 +28,7 @@ class InvTweaksVanillaCraftingBehavior : InvTweaksVanillaGenericBehavior() {
         var recipeIndex = 0
         var slot = gridSI.start()
         while (slot <= gridSI.end()) {
-            recipe[recipeIndex] = gridSI.screenHandler().slots[slot].stack
+            recipe[recipeIndex] = gridSI.screenHandler.slots[slot].stack
             slot++
             recipeIndex++
         }
@@ -97,7 +92,7 @@ class InvTweaksVanillaCraftingBehavior : InvTweaksVanillaGenericBehavior() {
     }
 
     private fun spreadItemsInPlace(gridSI: ScreenInventory) {
-        val handler = gridSI.screenHandler()
+        val handler = gridSI.screenHandler
         val screenController = InvtweaksScreenController(handler)
         val currentRecipeStacks = getCurrentRecipeStacks(gridSI)
         val itemCountInfo = countItemsOnRecipeStacks(currentRecipeStacks)
@@ -140,9 +135,8 @@ class InvTweaksVanillaCraftingBehavior : InvTweaksVanillaGenericBehavior() {
 //            return;
 //        }
 //
-        val craftingSI = operationInfo.clickedSI()
-        val subScreenInvs = getCraftingSubScreenInvs(craftingSI)
-        val craftingGridSI: ScreenInventory = subScreenInvs.gridSI
+        val subScreenInvs = operationInfo.otherInventories
+        val craftingGridSI: ScreenInventory = subScreenInvs.craftingSI.orElse(null) ?: return failure("No crafting grid found")
 
         if (operationInfo.clickedSlot.id in craftingGridSI.start()..craftingGridSI.end()) {
             warnPlayer("AAA ${operationInfo.clickedSlot.id} ${craftingGridSI.start()} ${craftingGridSI.end()}")
@@ -161,7 +155,7 @@ class InvTweaksVanillaCraftingBehavior : InvTweaksVanillaGenericBehavior() {
     }
 
     private fun searchForItem(inventory: ScreenInventory, item: Item): Int {
-        val screenController = InvtweaksScreenController(inventory.screenHandler())
+        val screenController = InvtweaksScreenController(inventory.screenHandler)
         LOGGER.info("Searching for item $item in slots ${inventory.start()} to ${inventory.end()}")
         for (slotId in inventory.start()..inventory.end()) {
             val stack = screenController.getStack(slotId)
@@ -172,15 +166,15 @@ class InvTweaksVanillaCraftingBehavior : InvTweaksVanillaGenericBehavior() {
         return -1
     }
 
-    private fun replenishRecipe(gridSI: ScreenInventory, resourcesSI: ScreenInventory, recipeStacks: RecipeStacks, hackAlreadyCrafted: Int = 0): Boolean {
-        val handler = gridSI.screenHandler()
+    private fun replenishRecipe(gridSI: ScreenInventory, resourcesSI: ScreenInventory, recipe: Recipe, hackAlreadyCrafted: Int = 0): Boolean {
+        val handler = gridSI.screenHandler
         val screenController = InvtweaksScreenController(handler)
         val gridStart = gridSI.start()
         var ranOutOfMaterials = true // Assume we ran out of materials (until proven otherwise)
 
-        LOGGER.info("Replenishing recipe ${recipeStacks.recipeStacks}")
-        for (i in recipeStacks.recipeStacks.indices) {
-            val recipeStack = recipeStacks.recipeStacks[i]
+        LOGGER.info("Replenishing recipe ${recipe.stacks}")
+        for (i in recipe.stacks.indices) {
+            val recipeStack = recipe.stacks[i]
             if (recipeStack.isEmpty) {
                 continue
             } else {
@@ -236,121 +230,60 @@ class InvTweaksVanillaCraftingBehavior : InvTweaksVanillaGenericBehavior() {
         return ranOutOfMaterials
     }
 
-    override fun moveAllSameType(operationInfo: OperationInfo): OperationResult {
-        //TODO: implement this
-        if (operationInfo.clickedSlot().id != RESULT_SLOT) {
-            return super.moveAllSameType(operationInfo)
-        }
-        val resultStack = operationInfo.clickedSI().screenHandler().slots[RESULT_SLOT].stack
-        if (resultStack.isEmpty) {
+    private fun massCraft(operationInfo: OperationInfo): OperationResult {
+        val inventories = operationInfo.otherInventories
+        val craftingSI = inventories.craftingSI.orElse(null) ?: return failure("No crafting inventory found")
+        val resourcesSI = inventories.playerCombinedSI
+
+        val handler = craftingSI.screenHandler
+
+        if (handler.slots[RESULT_SLOT].stack.isEmpty) {
+            warnPlayer("Nothing to craft")
             return SUCCESS
         }
-        val craftingSI = operationInfo.otherInventories().craftingSI.orElse(null)
-        if (craftingSI == null) {
-            InvTweaksMod.LOGGER.error("Could not find crafting inventory in " + operationInfo.clickedSI().screenHandler().toString())
-            return FAILURE
-        }
-        val subScreenInvs = getCraftingSubScreenInvs(craftingSI)
-        val gridSI: ScreenInventory = subScreenInvs.gridSI
-        val playerCombinedSI = operationInfo.otherInventories().playerCombinedSI
-        val resourceStackList = playerCombinedSI.screenHandler().stacks.subList(playerCombinedSI.start(), playerCombinedSI.end() + 1).stream().map { obj: ItemStack -> obj.copy() }.toList()
-        val recipeStacks: RecipeStacks = run {
-            //TODO: refactor hardcoded values 1 and 10
-            val recipeStackList = craftingSI.screenHandler().stacks.subList(1, 10).stream().map { obj: ItemStack -> obj.item }.map { obj: Item -> obj.defaultStack }.toList()
-            RecipeStacks(recipeStackList)
+
+        val screenController = InvtweaksScreenController(handler)
+
+        val recipe = Recipe(craftingSI.stacks)
+        val resources = InventoryAnalyzer.searchRecipeItems(resourcesSI.stacks, recipe)
+
+        val recipeItemCounts = InventoryAnalyzer.countItems(recipe.stacks)
+        val resourceItemCounts = InventoryAnalyzer.countItems(resourcesSI.stacks)
+
+        val missingItems = recipeItemCounts.filter { (item, count) -> (resourceItemCounts[item] ?: 0) < count }
+        if (missingItems.isNotEmpty()) {
+            // If we're missing items, we can't replenish the recipe,
+            // but there may be some items in the crafting grid that we can still craft
+            spreadItemsInPlace(craftingSI)
+            repeat(64) { screenController.dropOne(RESULT_SLOT) }
+
+            warnPlayer("Missing items: $missingItems")
+            return failure("Missing items: $missingItems")
         }
 
-        val screenController = InvtweaksScreenController(gridSI.screenHandler())
-        val itemToSlotMap: MutableMap<Item, MutableList<Int>> = HashMap()
-        for (item in recipeStacks.materialList) {
-            itemToSlotMap[item] = ArrayList()
-        }
-        for (slotId in gridSI.start()..gridSI.end()) {
-            val stack = screenController.getStack(slotId)
-            if (stack.isEmpty) {
-                continue
-            }
-            val item = stack.item
-            if (!itemToSlotMap.containsKey(item)) {
-                continue
-            }
-            itemToSlotMap[item]!!.add(slotId)
-        }
-        val recipeItemCounts: MutableMap<Item, Int> = HashMap()
-        val resourceItemCounts: MutableMap<Item, Int> = HashMap()
-        for (item in recipeStacks.materialList) {
-            recipeItemCounts[item] = 0
-        }
-        for (recipeStack in recipeStacks.recipeStacks) {
-            assert(recipeStack.count == 1)
-            val item = recipeStack.item
-            val newCount = recipeItemCounts.getOrDefault(item, 0) + recipeStack.count
-            recipeItemCounts[item] = newCount
-        }
-        for (resourceStack in resourceStackList) {
-            val item = resourceStack.item
-            val newCount = resourceItemCounts.getOrDefault(item, 0) + resourceStack.count
-            resourceItemCounts[item] = newCount
-        }
-        val craftCountByItem: MutableMap<Item, Int> = HashMap()
-        for (item in recipeStacks.materialList) {
-            if (recipeItemCounts[item] == 0) {
-                warnPlayer("Bug in recipeItemCounts.get(item) == 0, " + this.javaClass.name)
-                continue
-            }
-            val resourceCount = resourceItemCounts.getOrDefault(item, 0)
-            val recipeCount = recipeItemCounts.getOrDefault(item, -1)
-            if (resourceCount == 0) {
-                InvTweaksMod.LOGGER.info("No resources for item " + item.name.string)
-                warnPlayer("No resources for item " + item.name.string)
-                break
-            } else if (recipeCount == -1) {
-                InvTweaksMod.LOGGER.error("Bug in recipeItemCounts.get(item) == -1, " + this.javaClass.name)
-                warnPlayer("Bug in recipeItemCounts.get(item) == -1, " + this.javaClass.name)
-                break
-            }
-            val craftCount = resourceCount / recipeCount
-            craftCountByItem[item] = craftCount
-        }
-        var maxCraftCount = craftCountByItem.values.stream().mapToInt { obj: Int -> obj }.min().orElse(0)
-        LOGGER.info("maxCraftCount: $maxCraftCount")
-        warnPlayer("maxCraftCount: $maxCraftCount")
-
-        var craftedCount = 0
-        // Craft all items
-        for (i in 0 until maxCraftCount) {
-            screenController.craftAll(RESULT_SLOT)
-            replenishRecipe(gridSI, playerCombinedSI, recipeStacks, hackAlreadyCrafted = 0)
-            spreadItemsInPlace(gridSI)
-            craftedCount++
-            break
-//            if (ranOutOfMaterials) {
-//                val message = "Ran out of materials earlier than expected"
-//                LOGGER.warn(message)
-//                warnPlayer(message)
-//                return SUCCESS
-//            }
-        }
-
-        val remainingOperations = arrayListOf<OperationInfo>()
-        if (craftedCount < maxCraftCount) {
-            LOGGER.info("Crafted $craftedCount items, but there are still $maxCraftCount items to craft")
-            remainingOperations.add(operationInfo) // Repeat the operation in another game tick
-        }
-        else { // Last game tick
-            // TODO: refactor to make more sense to the reader
-            // Drop all remaining items in result slot
-            val resultStackCount = screenController.getStack(RESULT_SLOT).count
-            for (i in 0 until 64) {
-                screenController.craftAll(RESULT_SLOT)
-            }
-        }
+        replenishRecipe(craftingSI, resourcesSI, recipe)
+        spreadItemsInPlace(craftingSI)
+        screenController.dropOne(RESULT_SLOT)
+//        replenishRecipe(craftingSI, resourcesSI, recipe)
+//        spreadItemsInPlace(craftingSI)
 
         return OperationResult(
                 success = true,
-                message = "Crafted $craftedCount ${resultStack.item.name.string}, remaining: ${maxCraftCount - craftedCount}",
-
+                message = "Crafted ${handler.slots[RESULT_SLOT].stack.item.name.string}",
+                nextOperations = listOf(operationInfo)
         )
+    }
+
+    override fun moveAllSameType(operationInfo: OperationInfo): OperationResult {
+        // If the result slot is a common slot, then we can just use the default implementation
+        if (operationInfo.clickedSlot().id != RESULT_SLOT) {
+            return super.moveAllSameType(operationInfo)
+        }
+
+        return when(operationInfo.clickedSlot().id) {
+            RESULT_SLOT -> massCraft(operationInfo)
+            else -> super.moveAllSameType(operationInfo)
+        }
     }
 
     override fun dropAllSameType(operationInfo: OperationInfo): OperationResult {
@@ -371,7 +304,7 @@ class InvTweaksVanillaCraftingBehavior : InvTweaksVanillaGenericBehavior() {
 
     override fun moveStack(operationInfo: OperationInfo): OperationResult {
         if (operationInfo.clickedSlot().id == RESULT_SLOT) {
-            val screenController = InvtweaksScreenController(operationInfo.clickedSI().screenHandler())
+            val screenController = InvtweaksScreenController(operationInfo.clickedSI().screenHandler)
             screenController.craftAll(RESULT_SLOT)
             return SUCCESS
         }

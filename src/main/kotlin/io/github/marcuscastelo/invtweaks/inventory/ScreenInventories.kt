@@ -121,7 +121,7 @@ class ScreenInventories(handler: ScreenHandler) {
 
     companion object {
         private fun isPlayerScreen(si: ScreenInventory): Boolean {
-            return si.screenHandler() is PlayerScreenHandler
+            return si.screenHandler is PlayerScreenHandler
         }
     }
 }
