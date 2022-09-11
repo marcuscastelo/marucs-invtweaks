@@ -19,14 +19,14 @@ public class ITScreenControllerTest {
     }
 
     public void testSpreadStack(ScreenInventory boundInfo) {
-        controller.pickStack(boundInfo.start());
-        for (int i = boundInfo.start(); i <= boundInfo.end(); i++)
+        controller.pickStack(boundInfo.getStart());
+        for (int i = boundInfo.getStart(); i <= boundInfo.getEnd(); i++)
             controller.placeOne(i);
     }
 
     public void shiftStacksRight(ScreenInventory boundInfo) {
-        controller.pickStack(boundInfo.start());
-        for (int i = boundInfo.start() + 1; i <= boundInfo.end(); i++) {
+        controller.pickStack(boundInfo.getStart());
+        for (int i = boundInfo.getStart() + 1; i <= boundInfo.getEnd(); i++) {
             if (controller.isHoldingStack())
                 controller.placeStack(i);
             else
@@ -34,7 +34,7 @@ public class ITScreenControllerTest {
         }
 
         if (controller.isHoldingStack())
-            controller.placeStack(boundInfo.start());
+            controller.placeStack(boundInfo.getStart());
     }
 
 
@@ -144,7 +144,7 @@ public class ITScreenControllerTest {
         public Map<Item, StackGroupSortInfo> getStackGroupsSortingInfo() {
             Map<Item, StackGroupSortInfo> stackGroupSortInfo = new HashMap<>();
 
-            int currentSlot = boundInfo.start();
+            int currentSlot = boundInfo.getStart();
             for (Item item : itemList) {
                 StackGroup group = stackGroups.get(item);
                 int start = currentSlot;
@@ -155,7 +155,7 @@ public class ITScreenControllerTest {
                 stackGroupSortInfo.put(item, sortInfo);
 
                 currentSlot = end + 1;
-                assert currentSlot <= boundInfo.end();
+                assert currentSlot <= boundInfo.getEnd();
             }
 
             return stackGroupSortInfo;
@@ -166,7 +166,7 @@ public class ITScreenControllerTest {
     public void testSort(ScreenInventory boundInfo) {
         StacksSorter stacksSorter = new StacksSorter(boundInfo);
 
-        for (int slot = boundInfo.start(); slot <= boundInfo.end(); slot++) {
+        for (int slot = boundInfo.getStart(); slot <= boundInfo.getEnd(); slot++) {
             ItemStack slotStack = controller.getStack(slot);
             if (slotStack.isEmpty()) continue;
             stacksSorter.addStack(slotStack.copy());
@@ -174,10 +174,10 @@ public class ITScreenControllerTest {
 
         stacksSorter.sort();
         Map<Item, StacksSorter.StackGroupSortInfo> stackGroupsInfo = stacksSorter.getStackGroupsSortingInfo();
-        boolean[] slotIsSorted = new boolean[boundInfo.end() + 1];
+        boolean[] slotIsSorted = new boolean[boundInfo.getEnd() + 1];
 
         //Keeps track of the slots ordered without swapping logic
-        for (int slot = boundInfo.start(); slot <= boundInfo.end(); slot++) {
+        for (int slot = boundInfo.getStart(); slot <= boundInfo.getEnd(); slot++) {
             if (controller.getStack(slot).isEmpty()) continue;
             if (slotIsSorted[slot]) continue;
 
@@ -202,6 +202,6 @@ public class ITScreenControllerTest {
             slotIsSorted[slot] = true;
         }
 
-        //TODO: sort inventory using hop logic
+        //TODO: sort inventory using hop logic (but I forgot what it is, :P)
     }
 }

@@ -30,11 +30,11 @@ object InvTweaksBehaviorRegistry {
     fun executeOperation(screenHandlerClass: Class<out ScreenHandler?>, operationInfo: OperationInfo): OperationResult {
         require(isScreenSupported(screenHandlerClass)) { "Screen $screenHandlerClass doesn't have a behavior" }
         val behavior = getScreenSpecs(screenHandlerClass).invTweaksBehavior
-        val executor = operationInfo.type().asOperationExecutor(behavior)
+        val executor = operationInfo.type.asOperationExecutor(behavior)
         return if (executor.isPresent) {
             executor.get().execute(operationInfo)
         } else {
-            InvTweaksMod.LOGGER.warn("<InvTweaksBehaviorRegistry> Operation " + operationInfo.type() + " is not supported by " + behavior.javaClass)
+            InvTweaksMod.LOGGER.warn("<InvTweaksBehaviorRegistry> Operation " + operationInfo.type + " is not supported by " + behavior.javaClass)
             FAILURE
         }
     }

@@ -102,7 +102,7 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
     }
 
     protected open fun moveToInventory(handler: ScreenHandler, fromSlot: Int, destinationBoundInfo: ScreenInventory, quantity: Int, sorting: Boolean): Int {
-        val destinationStart = destinationBoundInfo.start()
+        val destinationStart = destinationBoundInfo.start
         val inventorySize = destinationBoundInfo.size
         return moveToSlot(handler, destinationStart + inventorySize - 1, fromSlot, destinationStart, quantity, sorting)
     }
@@ -117,9 +117,9 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
         }
 
     override fun sort(operationInfo: OperationInfo): OperationResult {
-        val handler = operationInfo.clickedSI().screenHandler
-        val startSlot = operationInfo.clickedSI().start()
-        val endSlot = operationInfo.clickedSI().end()
+        val handler = operationInfo.clickedSI.screenHandler
+        val startSlot = operationInfo.clickedSI.start
+        val endSlot = operationInfo.clickedSI.end
         val items: MutableSet<Item> = HashSet()
         val quantityPerItem = HashMap<Item, Int>()
         for (slot in startSlot..endSlot) {
@@ -152,10 +152,10 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
     }
 
     override fun moveAll(operationInfo: OperationInfo): OperationResult {
-        for (slotId in operationInfo.clickedSI().start()..operationInfo.clickedSI().end()) {
-            val stack = operationInfo.clickedSI().screenHandler.getSlot(slotId).stack
+        for (slotId in operationInfo.clickedSI.start..operationInfo.clickedSI.end) {
+            val stack = operationInfo.clickedSI.screenHandler.getSlot(slotId).stack
             if (stack.item === Items.AIR) continue
-            val result = moveToInventory(operationInfo.clickedSI().screenHandler, slotId, operationInfo.targetSI(), stack.count, false)
+            val result = moveToInventory(operationInfo.clickedSI.screenHandler, slotId, operationInfo.targetSI, stack.count, false)
             if (result == MOVE_RESULT_FULL) break
         }
         return SUCCESS
@@ -163,18 +163,18 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
 
     override fun dropAll(operationInfo: OperationInfo): OperationResult {
         val playerEntity = MinecraftClient.getInstance().player
-        for (slotId in operationInfo.clickedSI().start()..operationInfo.clickedSI().end()) {
-            MinecraftClient.getInstance().interactionManager!!.clickSlot(operationInfo.clickedSI().screenHandler.syncId, slotId, 1, SlotActionType.THROW, playerEntity)
+        for (slotId in operationInfo.clickedSI.start..operationInfo.clickedSI.end) {
+            MinecraftClient.getInstance().interactionManager!!.clickSlot(operationInfo.clickedSI.screenHandler.syncId, slotId, 1, SlotActionType.THROW, playerEntity)
         }
         return SUCCESS
     }
 
     override fun moveAllSameType(operationInfo: OperationInfo): OperationResult {
-        val itemType = operationInfo.clickedSlot().stack.item
-        for (slot in operationInfo.clickedSI().start()..operationInfo.clickedSI().end()) {
-            val stack = operationInfo.clickedSI().screenHandler.slots[slot].stack
+        val itemType = operationInfo.clickedSlot.stack.item
+        for (slot in operationInfo.clickedSI.start..operationInfo.clickedSI.end) {
+            val stack = operationInfo.clickedSI.screenHandler.slots[slot].stack
             if (stack.item !== itemType) continue
-            val result = moveToInventory(operationInfo.clickedSI().screenHandler, slot, operationInfo.targetSI(), stack.count, false)
+            val result = moveToInventory(operationInfo.clickedSI.screenHandler, slot, operationInfo.targetSI, stack.count, false)
             if (result == MOVE_RESULT_FULL) break
         }
         return SUCCESS
@@ -182,39 +182,39 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
 
     override fun dropAllSameType(operationInfo: OperationInfo): OperationResult {
         val playerEntity = MinecraftClient.getInstance().player
-        val itemType = operationInfo.clickedSlot().stack.item
-        for (slot in operationInfo.clickedSI().start()..operationInfo.clickedSI().end()) {
-            val stack = operationInfo.clickedSI().screenHandler.slots[slot].stack
+        val itemType = operationInfo.clickedSlot.stack.item
+        for (slot in operationInfo.clickedSI.start..operationInfo.clickedSI.end) {
+            val stack = operationInfo.clickedSI.screenHandler.slots[slot].stack
             if (stack.item !== itemType) continue
-            MinecraftClient.getInstance().interactionManager!!.clickSlot(operationInfo.clickedSI().screenHandler.syncId, slot, 1, SlotActionType.THROW, playerEntity)
+            MinecraftClient.getInstance().interactionManager!!.clickSlot(operationInfo.clickedSI.screenHandler.syncId, slot, 1, SlotActionType.THROW, playerEntity)
         }
         return SUCCESS
     }
 
     override fun moveOne(operationInfo: OperationInfo): OperationResult {
-        val handler = operationInfo.clickedSI().screenHandler
-        val from = operationInfo.clickedSlot().id
-        val result = moveToInventory(handler, from, operationInfo.targetSI(), 1, false)
+        val handler = operationInfo.clickedSI.screenHandler
+        val from = operationInfo.clickedSlot.id
+        val result = moveToInventory(handler, from, operationInfo.targetSI, 1, false)
         return SUCCESS
     }
 
     override fun dropOne(operationInfo: OperationInfo): OperationResult {
         val playerEntity = MinecraftClient.getInstance().player
-        MinecraftClient.getInstance().interactionManager!!.clickSlot(operationInfo.clickedSI().screenHandler.syncId, operationInfo.clickedSlot().id, 0, SlotActionType.THROW, playerEntity)
+        MinecraftClient.getInstance().interactionManager!!.clickSlot(operationInfo.clickedSI.screenHandler.syncId, operationInfo.clickedSlot.id, 0, SlotActionType.THROW, playerEntity)
         return SUCCESS
     }
 
     override fun moveStack(operationInfo: OperationInfo): OperationResult {
-        val handler = operationInfo.clickedSI().screenHandler
-        val from = operationInfo.clickedSlot().id
-        val stack = operationInfo.clickedSlot().stack
-        moveToInventory(handler, from, operationInfo.targetSI(), stack.count, false)
+        val handler = operationInfo.clickedSI.screenHandler
+        val from = operationInfo.clickedSlot.id
+        val stack = operationInfo.clickedSlot.stack
+        moveToInventory(handler, from, operationInfo.targetSI, stack.count, false)
         return SUCCESS
     }
 
     override fun dropStack(operationInfo: OperationInfo): OperationResult {
         val playerEntity = MinecraftClient.getInstance().player
-        MinecraftClient.getInstance().interactionManager!!.clickSlot(operationInfo.clickedSI().screenHandler.syncId, operationInfo.clickedSlot().id, 1, SlotActionType.THROW, playerEntity)
+        MinecraftClient.getInstance().interactionManager!!.clickSlot(operationInfo.clickedSI.screenHandler.syncId, operationInfo.clickedSlot.id, 1, SlotActionType.THROW, playerEntity)
         return SUCCESS
     }
 

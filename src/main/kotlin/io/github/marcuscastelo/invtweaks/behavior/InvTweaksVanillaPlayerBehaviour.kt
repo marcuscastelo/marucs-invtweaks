@@ -25,7 +25,7 @@ class InvTweaksVanillaPlayerBehaviour : InvTweaksVanillaGenericBehavior() {
 
     override fun sort(operationInfo: OperationInfo): OperationResult {
         //Do not sort armor
-        return if (isArmorSlot(operationInfo.clickedSlot().id)) FAILURE else super.sort(operationInfo)
+        return if (isArmorSlot(operationInfo.clickedSlot.id)) FAILURE else super.sort(operationInfo)
     }
 
     override fun moveAll(operationInfo: OperationInfo): OperationResult {
@@ -57,7 +57,7 @@ class InvTweaksVanillaPlayerBehaviour : InvTweaksVanillaGenericBehavior() {
     }
 
     fun isMoveableToArmorSlot(operationInfo: OperationInfo, itemStack: ItemStack?): Boolean {
-        val screenHandler = operationInfo.clickedSI().screenHandler as? PlayerScreenHandler ?: return false
+        val screenHandler = operationInfo.clickedSI.screenHandler as? PlayerScreenHandler ?: return false
         val (_, start, end) = ScreenInventory(screenHandler, 5, 8)
         var moveableToArmorInv = false
         for (slotId in start..end) {
@@ -72,15 +72,15 @@ class InvTweaksVanillaPlayerBehaviour : InvTweaksVanillaGenericBehavior() {
 
     override fun moveStack(operationInfo: OperationInfo): OperationResult {
         var operationInfo = operationInfo
-        val itemStack = operationInfo.clickedSlot().stack
-        val screenHandler = operationInfo.clickedSI().screenHandler
+        val itemStack = operationInfo.clickedSlot.stack
+        val screenHandler = operationInfo.clickedSI.screenHandler
         assert(screenHandler is PlayerScreenHandler)
         //Keep the same behavior for armor
         val isDownwardsMovement = isKeyPressed(GLFW.GLFW_KEY_S)
-        val isClickInArmorOrCraft = operationInfo.clickedSI().start() <= 8
+        val isClickInArmorOrCraft = operationInfo.clickedSI.start <= 8
         if (!isDownwardsMovement && isMoveableToArmorSlot(operationInfo, itemStack) && !isClickInArmorOrCraft) {
             val armorInv = ScreenInventory(screenHandler, 5, 8)
-            operationInfo = OperationInfo(operationInfo.type(), operationInfo.clickedSlot(), operationInfo.clickedSI(), armorInv, operationInfo.otherInventories())
+            operationInfo = OperationInfo(operationInfo.type, operationInfo.clickedSlot, operationInfo.clickedSI, armorInv, operationInfo.otherInventories)
         }
 
 //            int clickedSlotId = operationInfo.clickedSlot().id;

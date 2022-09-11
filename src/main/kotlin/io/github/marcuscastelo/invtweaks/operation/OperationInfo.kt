@@ -9,12 +9,5 @@ data class OperationInfo(
         val clickedSlot: Slot,
         val clickedSI: ScreenInventory,
         val targetSI: ScreenInventory,
-        val otherInventories: ScreenInventories)
-{
-    //TODO: refactor those accessors
-    fun type() = type
-    fun clickedSlot() = clickedSlot
-    fun clickedSI() = clickedSI
-    fun targetSI() = targetSI
-    fun otherInventories() = otherInventories
-}
+        val otherInventories: ScreenInventories
+)

@@ -14,7 +14,7 @@ class ScreenInventories(handler: ScreenHandler) {
     val playerMainSI: ScreenInventory
     val playerHotbarSI: ScreenInventory
 
-    //TODO: support more than one external inventory
+    //TODO: support more than a fixed amount of external inventory
     var storageSI: Optional<ScreenInventory> = Optional.empty()
     var craftingSI: Optional<ScreenInventory> = Optional.empty()
     var craftingResultSI: Optional<ScreenInventory> = Optional.empty()
@@ -78,9 +78,9 @@ class ScreenInventories(handler: ScreenHandler) {
         }
         clickedInventory = if (resultCount > 0) {
             results[0]
-        } else if (slotId <= playerMainSI.end()) {
+        } else if (slotId <= playerMainSI.end) {
             playerMainSI
-        } else if (slotId <= playerHotbarSI.end()) {
+        } else if (slotId <= playerHotbarSI.end) {
             playerHotbarSI
         } else {
             warnPlayer("Hmm... This is a bug! Couldn't determine which inventory has slotId = $slotId")
