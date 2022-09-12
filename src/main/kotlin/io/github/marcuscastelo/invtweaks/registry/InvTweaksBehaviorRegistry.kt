@@ -1,32 +1,32 @@
 package io.github.marcuscastelo.invtweaks.registry
 
 import io.github.marcuscastelo.invtweaks.InvTweaksMod
-import io.github.marcuscastelo.invtweaks.api.ScreenInventoriesSpecification
-import io.github.marcuscastelo.invtweaks.api.ScreenSpecification
 import io.github.marcuscastelo.invtweaks.behavior.*
 import io.github.marcuscastelo.invtweaks.operation.OperationInfo
 import io.github.marcuscastelo.invtweaks.operation.OperationResult
 import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.pass
+import io.github.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer
 import net.minecraft.screen.*
 
 object InvTweaksBehaviorRegistry {
-    var screenBehaviorMap = HashMap<Class<out ScreenHandler?>, ScreenSpecification>()
-    fun register(handlerClass: Class<out ScreenHandler?>, screenSpecification: ScreenSpecification): ScreenSpecification {
-        require(!screenBehaviorMap.containsKey(handlerClass)) { "Screen $handlerClass is already registered" }
-        screenBehaviorMap[handlerClass] = screenSpecification
-        return screenSpecification
-    }
+    private var behaviorMap = mutableMapOf<Class<out ScreenHandler>, IInvTweaksBehavior>()
 
-    fun getScreenSpecs(screenHandlerClass: Class<out ScreenHandler?>): ScreenSpecification {
-        require(isScreenSupported(screenHandlerClass)) { "Screen $screenHandlerClass is not supported" }
-        return screenBehaviorMap[screenHandlerClass] ?: throw IllegalStateException("Screen $screenHandlerClass is not registered")
+    private val DEFAULT_BEHAVIOR = InvTweaksVanillaGenericBehavior()
+
+    fun register(handlerClass: Class<out ScreenHandler>, behavior: IInvTweaksBehavior): IInvTweaksBehavior {
+        require(!behaviorMap.containsKey(handlerClass)) { "Screen $handlerClass is already registered" }
+        behaviorMap[handlerClass] = behavior
+        return behavior
     }
 
     @JvmStatic
     @Throws(IllegalArgumentException::class)
-    fun executeOperation(screenHandlerClass: Class<out ScreenHandler?>, operationInfo: OperationInfo): OperationResult {
-        require(isScreenSupported(screenHandlerClass)) { "Screen $screenHandlerClass doesn't have a behavior" }
-        val behavior = getScreenSpecs(screenHandlerClass).invTweaksBehavior
+    fun executeOperation(screenHandlerClass: Class<out ScreenHandler>, operationInfo: OperationInfo): OperationResult {
+        val behavior = behaviorMap[screenHandlerClass] ?: run {
+            warnPlayer("Screen $screenHandlerClass doesn't have a behavior");
+            DEFAULT_BEHAVIOR
+        }
+
         val executor = operationInfo.type.asOperationExecutor(behavior)
 
         return executor?.execute(operationInfo) ?: run {
@@ -36,47 +36,39 @@ object InvTweaksBehaviorRegistry {
     }
 
     @JvmStatic
-    fun isScreenSupported(screenHandlerClass: Class<out ScreenHandler?>): Boolean {
-        return screenBehaviorMap.containsKey(screenHandlerClass)
+    fun isScreenRegistered(screenHandlerClass: Class<out ScreenHandler>): Boolean {
+        return behaviorMap.containsKey(screenHandlerClass)
     }
 
     init {
-        //Default behaviour
+        //TODO: refactor this useless function
+        fun makeGeneric(behavior: IInvTweaksBehavior = InvTweaksVanillaGenericBehavior()) = behavior
 
-        val generic = ScreenSpecification.Builder().withBehavior(InvTweaksVanillaGenericBehavior()).build()
-
-        register(GenericContainerScreenHandler::class.java, generic)
-        register(ShulkerBoxScreenHandler::class.java, generic)
-        register(BrewingStandScreenHandler::class.java, generic)
-        register(BeaconScreenHandler::class.java, generic)
-        register(HopperScreenHandler::class.java, generic)
-        register(Generic3x3ContainerScreenHandler::class.java, generic)
-        register(FurnaceScreenHandler::class.java, generic)
-        register(SmokerScreenHandler::class.java, generic)
-        register(BlastFurnaceScreenHandler::class.java, generic)
-        register(AnvilScreenHandler::class.java, generic)
-        register(CartographyTableScreenHandler::class.java, generic)
-        register(LoomScreenHandler::class.java, generic)
-        register(SmithingScreenHandler::class.java, generic)
-        register(GrindstoneScreenHandler::class.java, generic)
-        register(HorseScreenHandler::class.java, generic)
-        val playerScreenInvSpecs = ScreenInventoriesSpecification(true, 27, 9)
-        register(PlayerScreenHandler::class.java,
-                ScreenSpecification.Builder()
-                        .withBehavior(InvTweaksVanillaPlayerBehaviour())
-                        .withInventoriesSpecification(playerScreenInvSpecs)
-                        .build()
-        )
-
+        register(GenericContainerScreenHandler::class.java, makeGeneric())
+        register(ShulkerBoxScreenHandler::class.java, makeGeneric())
+        register(BrewingStandScreenHandler::class.java, makeGeneric())
+        register(BeaconScreenHandler::class.java, makeGeneric())
+        register(HopperScreenHandler::class.java, makeGeneric())
+        register(Generic3x3ContainerScreenHandler::class.java, makeGeneric())
+        register(FurnaceScreenHandler::class.java, makeGeneric())
+        register(SmokerScreenHandler::class.java, makeGeneric())
+        register(BlastFurnaceScreenHandler::class.java, makeGeneric())
+        register(AnvilScreenHandler::class.java, makeGeneric())
+        register(CartographyTableScreenHandler::class.java, makeGeneric())
+        register(LoomScreenHandler::class.java, makeGeneric())
+        register(SmithingScreenHandler::class.java, makeGeneric())
+        register(GrindstoneScreenHandler::class.java, makeGeneric())
+        register(HorseScreenHandler::class.java, makeGeneric())
+        register(PlayerScreenHandler::class.java,makeGeneric(InvTweaksVanillaPlayerBehaviour()))
 
         //Merchant behaviour
-        register(MerchantScreenHandler::class.java, ScreenSpecification.Builder().withBehavior(InvTweaksVanillaMerchantBehavior()).build())
+        register(MerchantScreenHandler::class.java, InvTweaksVanillaMerchantBehavior())
 
         //Enchantment behaviour
-        register(EnchantmentScreenHandler::class.java, ScreenSpecification.Builder().withBehavior(EnchantingTableBehavior()).build())
+        register(EnchantmentScreenHandler::class.java, EnchantingTableBehavior())
 
         //Crafting behaviour
-        register(CraftingScreenHandler::class.java, ScreenSpecification.Builder().withBehavior(InvTweaksVanillaCraftingBehavior()).build())
-        register(StonecutterScreenHandler::class.java, ScreenSpecification.Builder().withBehavior(InvTweaksVanillaCraftingBehavior()).build())
+        register(CraftingScreenHandler::class.java, InvTweaksVanillaCraftingBehavior())
+        register(StonecutterScreenHandler::class.java, InvTweaksVanillaCraftingBehavior())
     }
 }

@@ -1,6 +1,6 @@
 package io.github.marcuscastelo.invtweaks.inventory
 
-import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry
+import io.github.marcuscastelo.invtweaks.api.InventoryConstants
 import io.github.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer
 import net.minecraft.screen.CraftingScreenHandler
 import net.minecraft.screen.PlayerScreenHandler
@@ -34,12 +34,11 @@ class ScreenInventories(handler: ScreenHandler) {
     }
 
     init {
-        val screenSpecification = InvTweaksBehaviorRegistry.getScreenSpecs(handler.javaClass)
         val screenSlotCount = handler.slots.size
 
         //FIXME: this is a hack to get the player inventory size
-        val playerMainInvSize = screenSpecification.inventoriesSpecification.playerMainInvSize
-        val playerHotbarSize = screenSpecification.inventoriesSpecification.playerHotbarSize
+        val playerMainInvSize = InventoryConstants.playerMainInvSize
+        val playerHotbarSize = InventoryConstants.playerHotbarSize
         val playerCombinedInvSize = playerHotbarSize + playerMainInvSize
         var storageInventorySize = screenSlotCount - playerCombinedInvSize
 

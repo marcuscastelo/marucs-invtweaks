@@ -10,9 +10,8 @@ import io.github.marcuscastelo.invtweaks.inventory.ScreenInventories
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory
 import io.github.marcuscastelo.invtweaks.operation.OperationInfo
 import io.github.marcuscastelo.invtweaks.operation.OperationResult
-import io.github.marcuscastelo.invtweaks.operation.OperationType
 import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry.executeOperation
-import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry.isScreenSupported
+import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry.isScreenRegistered
 import io.github.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer
 import io.github.marcuscastelo.invtweaks.util.KeyUtils.isKeyPressed
 import net.minecraft.client.MinecraftClient
@@ -29,7 +28,6 @@ import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
-import java.util.*
 import java.util.function.Consumer
 
 @Mixin(HandledScreen::class)
@@ -94,7 +92,7 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
         return (type == SlotActionType.CLONE) || (type == SlotActionType.PICKUP) || (type == SlotActionType.QUICK_MOVE)
     }
 
-    private fun isScreenSupported() = isScreenSupported(handler.javaClass)
+    private fun isScreenSupported() = isScreenRegistered(handler.javaClass)
 
     private fun isOverflowAllowed(button: Int): Boolean {
         return when (InvtweaksConfig.getOverflowMode()) {

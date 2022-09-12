@@ -1,6 +1,5 @@
 package io.github.marcuscastelo.invtweaks.tests;
 
-import io.github.marcuscastelo.invtweaks.api.ScreenSpecification;
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import io.github.marcuscastelo.invtweaks.util.InvtweaksScreenController;
 import io.github.marcuscastelo.invtweaks.util.ItemStackUtils;
@@ -12,10 +11,8 @@ import java.util.*;
 
 public class ITScreenControllerTest {
     private final InvtweaksScreenController controller;
-    private final ScreenSpecification screenSpecification;
-    public ITScreenControllerTest(InvtweaksScreenController controller, ScreenSpecification screenSpecification) {
+    public ITScreenControllerTest(InvtweaksScreenController controller) {
         this.controller = controller;
-        this.screenSpecification = screenSpecification;
     }
 
     public void testSpreadStack(ScreenInventory boundInfo) {
