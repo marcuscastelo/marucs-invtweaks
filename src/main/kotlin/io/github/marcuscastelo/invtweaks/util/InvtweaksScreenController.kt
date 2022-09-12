@@ -1,6 +1,7 @@
 package io.github.marcuscastelo.invtweaks.util
 
 import io.github.marcuscastelo.invtweaks.InvTweaksMod
+import io.github.marcuscastelo.invtweaks.InvTweaksMod.Companion.LOGGER
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.network.ClientPlayerEntity
 import net.minecraft.client.network.ClientPlayerInteractionManager
@@ -14,11 +15,11 @@ class InvtweaksScreenController(private val handler: ScreenHandler) {
     private val player: ClientPlayerEntity = MinecraftClient.getInstance().player?: throw AssertionError("Player is null")
 
     val isHoldingStack: Boolean get() = !heldStack.isEmpty
-    val heldStack: ItemStack get() = handler.cursorStack
+    val heldStack: ItemStack get() = handler.cursorStack.copy()
 
     fun pickStack(slot: Int) {
         if (!heldStack.isEmpty) {
-            System.err.println("[InvTweaks] Cannot pick stack, there is already a stack in hand!")
+            LOGGER.error("<ScreenController> Cannot pick stack, there is already a stack in hand!")
             return
         }
         leftClick(slot, SlotActionType.PICKUP)
@@ -26,13 +27,13 @@ class InvtweaksScreenController(private val handler: ScreenHandler) {
 
     fun placeStack(slot: Int) {
         if (heldStack.isEmpty) {
-            System.err.println("[InvTweaks] Cannot place stack, there is no stack in hand!")
+            LOGGER.error("<ScreenController> Cannot place stack, there is no stack in hand!")
             return
         }
         leftClick(slot, SlotActionType.PICKUP)
     }
 
-    fun craftAll(slot: Int) {
+    fun quickMove(slot: Int) {
         click(slot, 0, SlotActionType.QUICK_MOVE)
     }
 
@@ -45,10 +46,17 @@ class InvtweaksScreenController(private val handler: ScreenHandler) {
 
     fun placeOne(slot: Int) {
         if (heldStack.isEmpty) {
-            System.err.println("[InvTweaks] Cannot place stack, there is no stack in hand!")
+            LOGGER.error("<ScreenController> Cannot place stack, there is no stack in hand!")
             return
         }
+        val heldBefore = heldStack.copy()
         rightClick(slot, SlotActionType.PICKUP)
+        val heldAfter = heldStack.copy()
+        if (heldBefore == heldAfter) {
+            LOGGER.error("<ScreenController> Big problem! The stack in hand didn't change after placing one item!")
+            ChatUtils.warnPlayer("There was a problem placing one item! Please report this to the mod author!")
+            return
+        }
     }
 
     fun move(from: Int, to: Int) {
@@ -74,19 +82,19 @@ class InvtweaksScreenController(private val handler: ScreenHandler) {
     fun dropOne(slot: Int) {
         //TODO: check if held stack is empty?
         if (isEmpty(slot)) {
-            InvTweaksMod.LOGGER.warn("[InvTweaks] Cannot dropOne stack, slot is empty!")
+            InvTweaksMod.LOGGER.warn("<ScreenController> Cannot dropOne stack, slot is empty!")
             //            return;
         }
-        rightClick(slot, SlotActionType.THROW)
+        leftClick(slot, SlotActionType.THROW)
     }
 
     fun dropAll(slot: Int) {
         //TODO: check if held stack is empty?
         if (isEmpty(slot)) {
-            InvTweaksMod.LOGGER.warn("[InvTweaks] Cannot dropAll stack, slot is empty!")
+            InvTweaksMod.LOGGER.warn("<ScreenController> Cannot dropAll stack, slot is empty!")
             //            return;
         }
-        leftClick(slot, SlotActionType.THROW)
+        rightClick(slot, SlotActionType.THROW)
     }
 
     fun isEmpty(slot: Int): Boolean {
@@ -98,7 +106,7 @@ class InvtweaksScreenController(private val handler: ScreenHandler) {
     }
 
     fun getStack(slot: Int): ItemStack {
-        return handler.stacks[slot]
+        return handler.stacks[slot].copy()
 //                return handler.getSlot(slot).getStack().copy();
     }
 

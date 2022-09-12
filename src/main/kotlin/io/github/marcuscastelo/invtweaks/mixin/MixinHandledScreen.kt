@@ -89,6 +89,7 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
     protected open fun mouseClicked(mouseX: Double, mouseY: Double, button: Int, cir: CallbackInfoReturnable<Boolean>) {
         //mouseClicked is called before onMouseClick
         //we use this to bypass the middle click filter
+        warnPlayer("mouseClicked")
         bypassMiddleClickBarrier(mouseX, mouseY, button, cir)
     }
 
@@ -137,7 +138,6 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
         //In case of clicking outside of inventory, just ignore
         var pressedButton = pressedButton
         var actionType = actionType
-
         if (slot == null) return //Ignore clicks outside of inventory
         if (pressedButton !in 0..2) return  //Only left, right and middle clicks are handled
 
@@ -201,7 +201,7 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
     }
 
     private fun executeAndQueueOperation(operationInfo: OperationInfo): OperationResult {
-        LOGGER.info("Executing queued operation: $operationInfo")
+        LOGGER.info("Executing operation: $operationInfo")
         val result = executeOperation(handler.javaClass, operationInfo)
         result.nextOperations.forEach(Consumer { e: OperationInfo? -> queuedOperations.add(e!!) })
         when (result.success) {

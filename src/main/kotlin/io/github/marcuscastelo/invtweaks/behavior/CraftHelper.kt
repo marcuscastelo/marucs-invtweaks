@@ -124,7 +124,6 @@ object CraftHelper {
 
     fun searchForItem(stacks: ScreenInventory, item: Item): Int {
         val screenController = InvtweaksScreenController(stacks.screenHandler)
-        InvTweaksMod.LOGGER.info("Searching for item $item in slots ${stacks.start} to ${stacks.end}")
         for (slotId in stacks.start..stacks.end) {
             val stack = screenController.getStack(slotId)
             if (stack.isOf(item)) {
@@ -173,7 +172,12 @@ object CraftHelper {
                 val recipeCount = recipeItemCount[recipeStack.item] ?: run { ChatUtils.warnPlayer("Cannot find ${recipeStack.item.name.string} in recipe"); 999 }
                 val currentStackCount = screenController.getStack(resourceSlot).count
                 screenController.pickStack(resourceSlot)
+//                repeat(1) {
+//                    screenController.placeStack(targetSlotID)
+//                    screenController.pickStack(targetSlotID)
+//                }
                 screenController.placeSome(targetSlotID, 1)
+//                screenController.placeStack(targetSlotID)
 
 
                 if (!screenController.heldStack.isEmpty) {
@@ -194,7 +198,6 @@ object CraftHelper {
             }
         }
 
-        InvTweaksMod.LOGGER.info("ranOutOfMaterials: $ranOutOfMaterials")
         return ranOutOfMaterials
     }
 
@@ -231,7 +234,7 @@ object CraftHelper {
             if (isInventoryFull())
                 screenController.dropOne(resultSlot.id)
 
-            screenController.craftAll(resultSlot.id)
+            screenController.quickMove(resultSlot.id)
         }
 
 
@@ -252,6 +255,7 @@ object CraftHelper {
 
         repeat(1) {
             replenishRecipe(craftingSI, resourcesSI, recipe)
+            spreadItemsInPlace(craftingSI)
 
             craft()
             replenishRecipe(craftingSI, resourcesSI, recipe)
