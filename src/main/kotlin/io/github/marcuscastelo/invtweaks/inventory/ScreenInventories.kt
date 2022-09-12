@@ -1,6 +1,5 @@
 package io.github.marcuscastelo.invtweaks.inventory
 
-import io.github.marcuscastelo.invtweaks.api.InventoryConstants
 import io.github.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer
 import net.minecraft.screen.CraftingScreenHandler
 import net.minecraft.screen.PlayerScreenHandler

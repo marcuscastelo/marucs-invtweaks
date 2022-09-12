@@ -1,120 +1,21 @@
 package io.github.marcuscastelo.invtweaks.behavior
 
 import io.github.marcuscastelo.invtweaks.InvTweaksMod
-import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory
+import io.github.marcuscastelo.invtweaks.behavior.Jesus
 import io.github.marcuscastelo.invtweaks.operation.OperationInfo
 import io.github.marcuscastelo.invtweaks.operation.OperationResult
 import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.FAILURE
 import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.SUCCESS
-import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.failure
 import io.github.marcuscastelo.invtweaks.operation.OperationResult.Companion.pass
 import io.github.marcuscastelo.invtweaks.util.InventoryUtils
 import net.minecraft.client.MinecraftClient
 import net.minecraft.inventory.CraftingInventory
-import net.minecraft.inventory.CraftingResultInventory
 import net.minecraft.item.Item
 import net.minecraft.item.Items
-import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.slot.CraftingResultSlot
-import net.minecraft.screen.slot.Slot
 import net.minecraft.screen.slot.SlotActionType
-import net.minecraft.sound.SoundEvents
-import net.minecraft.util.math.MathHelper
 
 open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
-    val MOVE_RESULT_FULL = -3
-    protected open fun moveToSlot(handler: ScreenHandler, maxSlot: Int, fromSlotId: Int, toSlotId: Int, quantity: Int, sorting: Boolean): Int {
-        val initialStack = handler.getSlot(fromSlotId).stack.copy()
-        val initialCount = initialStack.count
-        if (quantity > initialCount) {
-            println("Trying to move more than we have InvTweaksVanillaBehavior@moveToSlot")
-            return -1
-        }
-        val interactionManager = MinecraftClient.getInstance().interactionManager
-        val player = MinecraftClient.getInstance().player
-        if (interactionManager == null || player == null) {
-            println("nullptr in InvTweaksVanillaBehavior@moveSome")
-            return -2
-        }
-
-        //Item in hand
-        interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player)
-        var currentHeldStack = handler.cursorStack
-        var remainingTotalClicks = quantity
-        var candidateDestination = toSlotId
-        while (remainingTotalClicks > 0 && candidateDestination <= maxSlot) {
-            if (!handler.canInsertIntoSlot(currentHeldStack, handler.slots[candidateDestination])) {
-                candidateDestination++
-                continue
-            }
-            val candidateDstStack = handler.slots[candidateDestination].stack
-            if (candidateDstStack.item !== initialStack.item) {
-                return if (candidateDstStack.item === Items.AIR) {
-                    //If air, just put
-                    val rightClicks = MathHelper.clamp(remainingTotalClicks, 0, initialStack.maxCount)
-                    if (rightClicks == initialStack.maxCount) {
-                        interactionManager.clickSlot(handler.syncId, candidateDestination, 0, SlotActionType.PICKUP, player)
-                    } else {
-                        //TODO: send one packet, instead of a flood
-                        for (i in 0 until rightClicks) {
-                            interactionManager.clickSlot(handler.syncId, candidateDestination, 1, SlotActionType.PICKUP, player)
-                        }
-                    }
-                    remainingTotalClicks -= rightClicks
-                    candidateDestination++
-                    continue
-                } else {
-                    //If slot is occupied
-                    if (sorting) {
-                        var dumpWrongStackSlot = candidateDestination + 1
-                        while (handler.slots[dumpWrongStackSlot].stack.item !== Items.AIR && dumpWrongStackSlot <= maxSlot) dumpWrongStackSlot++
-                        if (dumpWrongStackSlot > maxSlot) { //If there's no more room
-                            //Returns remaining
-                            interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player)
-                            currentHeldStack = handler.cursorStack
-                            return MOVE_RESULT_FULL
-                        }
-
-                        //Swap right and wrong
-                        interactionManager.clickSlot(handler.syncId, candidateDestination, 0, SlotActionType.PICKUP, player)
-                        currentHeldStack = handler.cursorStack
-
-                        //Dump wrong
-                        interactionManager.clickSlot(handler.syncId, dumpWrongStackSlot, 0, SlotActionType.PICKUP, player)
-                        currentHeldStack = handler.cursorStack
-                        candidateDestination
-                    } else {
-                        candidateDestination++
-                        continue
-                    }
-                }
-            }
-
-            //If same type:
-            val clicksToCompleteStack = candidateDstStack.maxCount - candidateDstStack.count
-            val rightClicks = MathHelper.clamp(remainingTotalClicks, 0, clicksToCompleteStack)
-            if (rightClicks > 0 && remainingTotalClicks >= clicksToCompleteStack) {
-                interactionManager.clickSlot(handler.syncId, candidateDestination, 0, SlotActionType.PICKUP, player)
-                currentHeldStack = handler.cursorStack
-            } else for (i in 0 until rightClicks) {
-                interactionManager.clickSlot(handler.syncId, candidateDestination, 1, SlotActionType.PICKUP, player)
-                currentHeldStack = handler.cursorStack
-            }
-            remainingTotalClicks -= rightClicks
-            candidateDestination++
-        }
-        if (remainingTotalClicks > 0) interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player)
-        currentHeldStack = handler.cursorStack
-        if (!currentHeldStack.isEmpty) interactionManager.clickSlot(handler.syncId, fromSlotId, 0, SlotActionType.PICKUP, player)
-        if (candidateDestination > toSlotId) candidateDestination--
-        return candidateDestination
-    }
-
-    protected open fun moveToInventory(handler: ScreenHandler, fromSlot: Int, destinationBoundInfo: ScreenInventory, quantity: Int, sorting: Boolean): Int {
-        val destinationStart = destinationBoundInfo.start
-        val inventorySize = destinationBoundInfo.size
-        return moveToSlot(handler, destinationStart + inventorySize - 1, fromSlot, destinationStart, quantity, sorting)
-    }
 
     protected val sortingComparator: Comparator<Item>
         protected get() = Comparator.comparing { item: Item ->
@@ -126,6 +27,9 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
         }
 
     override fun sort(operationInfo: OperationInfo): OperationResult {
+        if (operationInfo.clickedSlot.inventory is CraftingInventory)
+            return CraftHelper.spreadItemsInPlace(operationInfo.clickedSI)
+
         val handler = operationInfo.clickedSI.screenHandler
         val startSlot = operationInfo.clickedSI.start
         val endSlot = operationInfo.clickedSI.end
@@ -148,7 +52,7 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
                 if (movedItems >= totalItems) break
                 val stack = handler.slots[fromSlot].stack
                 if (stack.item !== item) continue
-                val placedAt = moveToSlot(handler, endSlot, fromSlot, destinationSlot, stack.count, true)
+                val placedAt = Jesus.moveToSlot(handler, endSlot, fromSlot, destinationSlot, stack.count, true)
                 destinationSlot = Math.max(destinationSlot, placedAt)
                 if (placedAt > 0) {
                     movedItems += stack.count
@@ -164,8 +68,8 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
         for (slotId in operationInfo.clickedSI.start..operationInfo.clickedSI.end) {
             val stack = operationInfo.clickedSI.screenHandler.getSlot(slotId).stack
             if (stack.item === Items.AIR) continue
-            val result = moveToInventory(operationInfo.clickedSI.screenHandler, slotId, operationInfo.targetSI, stack.count, false)
-            if (result == MOVE_RESULT_FULL) break
+            val result = Jesus.moveToInventory(operationInfo.clickedSI.screenHandler, slotId, operationInfo.targetSI, stack.count, false)
+            if (result == Jesus.MOVE_RESULT_FULL) break
         }
         return SUCCESS
     }
@@ -179,12 +83,15 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
     }
 
     override fun moveAllSameType(operationInfo: OperationInfo): OperationResult {
+        if (operationInfo.clickedSlot is CraftingResultSlot)
+            return CraftHelper.massCraft(operationInfo.clickedSlot, operationInfo)
+
         val itemType = operationInfo.clickedSlot.stack.item
         for (slot in operationInfo.clickedSI.start..operationInfo.clickedSI.end) {
             val stack = operationInfo.clickedSI.screenHandler.slots[slot].stack
             if (stack.item !== itemType) continue
-            val result = moveToInventory(operationInfo.clickedSI.screenHandler, slot, operationInfo.targetSI, stack.count, false)
-            if (result == MOVE_RESULT_FULL) break
+            val result = Jesus.moveToInventory(operationInfo.clickedSI.screenHandler, slot, operationInfo.targetSI, stack.count, false)
+            if (result == Jesus.MOVE_RESULT_FULL) break
         }
         return SUCCESS
     }
@@ -203,7 +110,7 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
     override fun moveOne(operationInfo: OperationInfo): OperationResult {
         val handler = operationInfo.clickedSI.screenHandler
         val from = operationInfo.clickedSlot.id
-        val result = moveToInventory(handler, from, operationInfo.targetSI, 1, false)
+        val result = Jesus.moveToInventory(handler, from, operationInfo.targetSI, 1, false)
         return SUCCESS
     }
 
@@ -218,14 +125,14 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
 
         InvTweaksMod.LOGGER.info("moveStack in ${operationInfo.clickedSI.screenHandler}")
         InvTweaksMod.LOGGER.info("clickedSlot: ${operationInfo.clickedSlot}; class: ${operationInfo.clickedSlot.javaClass}")
-        if (InventoryUtils.isCraftingOutputSlot(operationInfo.clickedSlot)) {
+        if (operationInfo.clickedSlot is CraftingResultSlot) {
             return pass("Use vanilla crafting for moveStack in crafting output slot")
         }
 
         val handler = operationInfo.clickedSI.screenHandler
         val from = operationInfo.clickedSlot.id
         val stack = operationInfo.clickedSlot.stack
-        moveToInventory(handler, from, operationInfo.targetSI, stack.count, false)
+        Jesus.moveToInventory(handler, from, operationInfo.targetSI, stack.count, false)
         return SUCCESS
     }
 

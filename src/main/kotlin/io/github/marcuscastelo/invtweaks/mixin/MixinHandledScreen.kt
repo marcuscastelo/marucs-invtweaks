@@ -10,13 +10,17 @@ import io.github.marcuscastelo.invtweaks.inventory.ScreenInventories
 import io.github.marcuscastelo.invtweaks.inventory.ScreenInventory
 import io.github.marcuscastelo.invtweaks.operation.OperationInfo
 import io.github.marcuscastelo.invtweaks.operation.OperationResult
+import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry
 import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry.executeOperation
 import io.github.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry.isScreenRegistered
 import io.github.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer
 import io.github.marcuscastelo.invtweaks.util.KeyUtils.isKeyPressed
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gui.screen.ingame.HandledScreen
+import net.minecraft.inventory.Inventory
+import net.minecraft.item.Items
 import net.minecraft.screen.ScreenHandler
+import net.minecraft.screen.slot.CraftingResultSlot
 import net.minecraft.screen.slot.Slot
 import net.minecraft.screen.slot.SlotActionType
 import net.minecraft.sound.SoundEvents
@@ -92,7 +96,7 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
         return (type == SlotActionType.CLONE) || (type == SlotActionType.PICKUP) || (type == SlotActionType.QUICK_MOVE)
     }
 
-    private fun isScreenSupported() = isScreenRegistered(handler.javaClass)
+    private fun isScreenRegistered() = isScreenRegistered(handler.javaClass)
 
     private fun isOverflowAllowed(button: Int): Boolean {
         return when (InvtweaksConfig.getOverflowMode()) {
@@ -134,8 +138,9 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
         var pressedButton = pressedButton
         var actionType = actionType
 
-        if (slot == null) return
-        if (pressedButton != 0 && pressedButton != 1 && pressedButton != 2) return  //Only left, right and middle clicks are handled
+        if (slot == null) return //Ignore clicks outside of inventory
+        if (pressedButton !in 0..2) return  //Only left, right and middle clicks are handled
+
         //Bypass the middle click filter, so that we can handle the middle click
         if (isBypassActive()) {
             pressedButton = MIDDLE_CLICK
@@ -143,57 +148,56 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
         }
 
         //We do not handle pickup all, so we can just call the original method
-        if (!isSlotActionTypeSupported(actionType!!)) return
-        if (!isScreenSupported()) {
-            warnPlayer("This screen is not supported by Marucs' InvTweaks")
-            warnPlayer("This screen is not supported by Marucs' InvTweaks")
-            warnPlayer("This screen is not supported by Marucs' InvTweaks")
-            warnPlayer("This screen is not supported by Marucs' InvTweaks")
-            while (--pressedButton >= 0) {
-                warnPlayer("This screen is not supported by Marucs' InvTweaks")
-            }
-            return
-        }
+        if (!isSlotActionTypeSupported(actionType!!)) return warnPlayer("Ignoring unsupported action type: $actionType")
+        if (!isScreenRegistered()) return warnPlayer("This screen is not supported by Marucs' InvTweaks")
+
         val screenInvs = ScreenInventories(handler)
         val clickedSI = screenInvs.getClickedInventory(slot.id)
         val targetSI = getTargetInventory(clickedSI, screenInvs, isOverflowAllowed(pressedButton))
-        if (isKeyPressed(GLFW.GLFW_KEY_F1)) {
-            debugPrintScreenHandlerInfo(screenInvs)
-        } else if (isKeyPressed(GLFW.GLFW_KEY_F2)) {
-            warnPlayer("Current slot = " + slot + ", id = " + slot.id)
-            warnPlayer("Clicked SI = $clickedSI")
-            warnPlayer("Target SI = $targetSI")
-        }
+
         val inputProvider = InputProvider(pressedButton)
-        val operationType = OperationTypeInterpreter.interpret(inputProvider) ?: run {
-            warnPlayer("Operation type is null!")
-            return
-        }
+        val operationType =
+                OperationTypeInterpreter.interpret(inputProvider) ?:
+                return warnPlayer("Operation type is null!")
+
         val operationInfo = OperationInfo(operationType, slot, clickedSI, targetSI!!, screenInvs)
 
-        try {
-            val result = executeAndQueueOperation(operationInfo)
-            if (result.success == OperationResult.SuccessType.SUCCESS) {
-                ci.cancel()
+        val result = executeAndQueueOperation(operationInfo)
+        if (result.success == OperationResult.SuccessType.SUCCESS) {
+            ci.cancel()
+        }
+    }
+
+    fun debugHotKeyTick() {
+        if (!isKeyPressed(GLFW.GLFW_KEY_G)) return
+
+        warnPlayer("Current handler: " + handler.javaClass.name)
+
+        val uniqueInventories = mutableSetOf<Inventory>()
+        for (slot in handler.slots) {
+            uniqueInventories.add(slot.inventory)
+            if (slot is CraftingResultSlot) {
+                slot.stack = Items.BEDROCK.defaultStack
             }
-        } catch (e: IllegalArgumentException) {
-            warnPlayer("Operation not supported: " + e.message)
-            warnPlayer("Operation info: $operationInfo")
-            warnPlayer("Operation type: $operationType")
-            warnPlayer("Clicked slot: $slot")
-            warnPlayer("Clicked inventory: $clickedSI")
-            warnPlayer("Other inventory: $targetSI")
-            warnPlayer("Handler: $handler")
+        }
+        warnPlayer("Unique inventories: ${uniqueInventories.size}")
+
+        for (inv in uniqueInventories) {
+            warnPlayer("Inventory: ${inv.javaClass}, size: ${inv.size()}")
         }
     }
 
     @Inject(at = [At("HEAD")], method = ["tick"])
     open fun tick(ci: CallbackInfo?) {
+        debugHotKeyTick()
+
+
         if (queuedOperations.isEmpty()) return
         val operationInfo = queuedOperations.removeAt(0)
 
         executeAndQueueOperation(operationInfo)
         //FIXME: try-catch here?
+
     }
 
     private fun executeAndQueueOperation(operationInfo: OperationInfo): OperationResult {

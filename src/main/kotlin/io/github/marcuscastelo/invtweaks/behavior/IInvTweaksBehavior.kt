@@ -2,6 +2,9 @@ package io.github.marcuscastelo.invtweaks.behavior
 
 import io.github.marcuscastelo.invtweaks.operation.OperationInfo
 import io.github.marcuscastelo.invtweaks.operation.OperationResult
+import net.minecraft.screen.slot.CraftingResultSlot
+import net.minecraft.screen.slot.Slot
+import kotlin.contracts.contract
 
 interface IInvTweaksBehavior {
     fun sort(operationInfo: OperationInfo): OperationResult

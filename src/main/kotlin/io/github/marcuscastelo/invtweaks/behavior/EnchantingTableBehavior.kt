@@ -6,8 +6,7 @@ import net.minecraft.item.Items
 
 class EnchantingTableBehavior : InvTweaksVanillaGenericBehavior() {
     override fun moveStack(operationInfo: OperationInfo): OperationResult {
-        val stackToMove = operationInfo.clickedSlot.stack
-        if (stackToMove.isOf(Items.LAPIS_LAZULI))
+        if (operationInfo.clickedSlot.stack.isOf(Items.LAPIS_LAZULI))
             return OperationResult.pass("Using vanilla Lapis lazuli behavior for enchanting table")
         
         return super.moveStack(operationInfo)

@@ -17,49 +17,13 @@ class InvTweaksVanillaPlayerBehaviour : InvTweaksVanillaGenericBehavior() {
         return slotId in 5..8
     }
 
-    override fun moveToSlot(handler: ScreenHandler, maxSlot: Int, fromSlotId: Int, toSlotId: Int, quantity: Int, sorting: Boolean): Int {
-        return super.moveToSlot(handler, maxSlot, fromSlotId, toSlotId, quantity, sorting)
-    }
-
-    override fun moveToInventory(handler: ScreenHandler, fromSlot: Int, destinationBoundInfo: ScreenInventory, quantity: Int, sorting: Boolean): Int {
-        return super.moveToInventory(handler, fromSlot, destinationBoundInfo, quantity, sorting)
-    }
-
     override fun sort(operationInfo: OperationInfo): OperationResult {
         //Do not sort armor
         return if (isArmorSlot(operationInfo.clickedSlot.id)) FAILURE else super.sort(operationInfo)
     }
 
-    override fun moveAll(operationInfo: OperationInfo): OperationResult {
-        return super.moveAll(operationInfo)
-    }
-
-    override fun dropAll(operationInfo: OperationInfo): OperationResult {
-        return super.dropAll(operationInfo)
-    }
-
     override fun moveAllSameType(operationInfo: OperationInfo): OperationResult {
-        if (operationInfo.clickedSlot.id == 0) {
-            return InvTweaksVanillaCraftingBehavior().moveAllSameType(operationInfo)
-        }
-
         return super.moveAllSameType(operationInfo)
-    }
-
-    override fun dropAllSameType(operationInfo: OperationInfo): OperationResult {
-        return super.dropAllSameType(operationInfo)
-    }
-
-    override fun moveOne(operationInfo: OperationInfo): OperationResult {
-        return super.moveOne(operationInfo)
-    }
-
-    override fun dropOne(operationInfo: OperationInfo): OperationResult {
-        return super.dropOne(operationInfo)
-    }
-
-    override fun dropStack(operationInfo: OperationInfo): OperationResult {
-        return super.dropStack(operationInfo)
     }
 
     fun isMoveableToArmorSlot(operationInfo: OperationInfo, itemStack: ItemStack?): Boolean {
