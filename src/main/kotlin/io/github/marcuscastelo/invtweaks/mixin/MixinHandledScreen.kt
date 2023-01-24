@@ -89,7 +89,7 @@ abstract class MixinHandledScreen<T: ScreenHandler> {
     protected open fun mouseClicked(mouseX: Double, mouseY: Double, button: Int, cir: CallbackInfoReturnable<Boolean>) {
         //mouseClicked is called before onMouseClick
         //we use this to bypass the middle click filter
-        warnPlayer("mouseClicked")
+//        warnPlayer("mouseClicked")
         bypassMiddleClickBarrier(mouseX, mouseY, button, cir)
     }
 
