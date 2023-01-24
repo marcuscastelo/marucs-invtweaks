@@ -5,7 +5,6 @@ import net.minecraft.screen.CraftingScreenHandler
 import net.minecraft.screen.PlayerScreenHandler
 import net.minecraft.screen.ScreenHandler
 import java.util.*
-import java.util.function.Function
 import java.util.stream.Stream
 
 class ScreenInventories(handler: ScreenHandler) {
@@ -18,8 +17,10 @@ class ScreenInventories(handler: ScreenHandler) {
     var craftingSI: Optional<ScreenInventory> = Optional.empty()
     var craftingResultSI: Optional<ScreenInventory> = Optional.empty()
     var armorSI: Optional<ScreenInventory> = Optional.empty()
+    var offHandSI: Optional<ScreenInventory> = Optional.empty()
+
     fun extraInvs(): Stream<ScreenInventory> {
-        val ao = arrayOf(storageSI, craftingSI, craftingResultSI, armorSI)
+        val ao = arrayOf(storageSI, craftingSI, craftingResultSI, armorSI, offHandSI)
         val aos: Stream<Optional<ScreenInventory>> = Arrays.stream(ao)
         return aos.filter { obj: Optional<ScreenInventory> -> obj.isPresent }.map { obj: Optional<ScreenInventory> -> obj.get() }
     }
@@ -63,6 +64,10 @@ class ScreenInventories(handler: ScreenHandler) {
         playerCombinedSI = ScreenInventory(handler, extraInvsSize, extraInvsSize + playerCombinedInvSize - 1)
         playerMainSI = ScreenInventory(handler, extraInvsSize, extraInvsSize + playerMainInvSize - 1)
         playerHotbarSI = ScreenInventory(handler, extraInvsSize + playerMainInvSize, extraInvsSize + playerMainInvSize + playerHotbarSize - 1)
+
+        if (handler.javaClass == PlayerScreenHandler::class.java) {
+            offHandSI = Optional.of(ScreenInventory(handler, 45, 45))
+        }
     }
 
     fun getClickedInventory(slotId: Int): ScreenInventory {
@@ -72,7 +77,7 @@ class ScreenInventories(handler: ScreenHandler) {
         if (resultCount > 1) {
             warnPlayer("Please tell Marucs there is a bug on the code!!")
             warnPlayer("Couldn't determine which inventory was clicked (more than one have slotId = $slotId)")
-            warnPlayer("Results: " + results.stream().map(Function<ScreenInventory, String> { it.toString()}).reduce { a: String, s: String -> "$a, $s" })
+            warnPlayer("Results: " + results.stream().map { it.toString() }.reduce { a: String, s: String -> "$a, $s" })
         }
         clickedInventory = if (resultCount > 0) {
             results[0]
@@ -98,7 +103,7 @@ class ScreenInventories(handler: ScreenHandler) {
     }
 
     fun getInventoryUpwards(initialSI: ScreenInventory, allowCombined: Boolean): ScreenInventory {
-        val playerScreen = isPlayerScreen(initialSI)
+//        val playerScreen = isPlayerScreen(initialSI)
 //        val (screenHandler, start, end) = if (allowCombined) playerCombinedSI else playerMainSI
         val hotbar = if (allowCombined) playerCombinedSI else playerHotbarSI
         return if (initialSI === playerMainSI) extraInvs().findAny().orElse(playerHotbarSI) else if (initialSI === playerHotbarSI) playerMainSI else if (isExtraInv(initialSI)) hotbar else {
