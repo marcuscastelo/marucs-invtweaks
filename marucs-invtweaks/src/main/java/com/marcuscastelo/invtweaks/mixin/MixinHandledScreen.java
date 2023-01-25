@@ -47,7 +47,10 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> implements Par
     protected T handler;
 
     private boolean _middleClickBypass = false;
-    private boolean isBypassActive() { return _middleClickBypass; }
+
+    private boolean isBypassActive() {
+        return _middleClickBypass;
+    }
 
     private boolean isTryingToCloneItem(int button) {
         boolean isCloneBtn = MinecraftClient.getInstance().options.pickItemKey.matchesMouse(button);
@@ -86,9 +89,8 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> implements Par
         runMiddleClickAsLeftClick(mouseX, mouseY, button, cir);
     }
 
-    @Inject(method = "mouseClicked", at=@At("HEAD"), cancellable = true)
-    protected void invtweaks$mouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir)
-    {
+    @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
+    protected void invtweaks$mouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
         //mouseClicked is called before onMouseClick
         //we use this to bypass the middle click filter
         bypassMiddleClickBarrier(mouseX, mouseY, button, cir);
@@ -137,7 +139,8 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> implements Par
     protected void onMouseClick(Slot slot, int invSlot, int pressedButton, SlotActionType actionType, CallbackInfo ci) {
         //In case of clicking outside of inventory, just ignore
         if (slot == null) return;
-        if (pressedButton != 0 && pressedButton != 1 && pressedButton != 2) return; //Only left, right and middle clicks are handled
+        if (pressedButton != 0 && pressedButton != 1 && pressedButton != 2)
+            return; //Only left, right and middle clicks are handled
         //Bypass the middle click filter, so that we can handle the middle click
         if (isBypassActive()) {
             pressedButton = MIDDLE_CLICK;
@@ -175,7 +178,9 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> implements Par
             return;
         }
 
-        OperationInfo operationInfo = new OperationInfo(operationType, slot, clickedSI, targetSI, screenInvs);
+        OperationInfo operationInfo = new OperationInfo(
+                operationType, slot, clickedSI, targetSI, screenInvs, null
+        );
 
         try {
             OperationResult result = executeAndQueueOperation(operationInfo);
@@ -231,12 +236,16 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> implements Par
     private OperationResult executeAndQueueOperation(OperationInfo operationInfo) {
         InvTweaksMod.getLOGGER().info("Executing operation: $operationInfo");
         OperationResult result = InvTweaksBehaviorRegistry.INSTANCE.executeOperation(handler.getClass(), operationInfo);
-        result.getNextOperations().forEach(e -> queuedOperations.add(e) );
+        result.getNextOperations().forEach(e -> queuedOperations.add(e));
         switch (result.getSuccess()) {
-            case SUCCESS -> MinecraftClient.getInstance().player.playSound(SoundEvents.BLOCK_CHAIN_PLACE, 1.8f, 0.8f + MinecraftClient.getInstance().world.random.nextFloat() * 0.4f);
-            case FAILURE -> MinecraftClient.getInstance().player.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.8f, 0.8f + MinecraftClient.getInstance().world.random.nextFloat() * 0.4f);
-            case PASS -> {}
-        };
+            case SUCCESS ->
+                    MinecraftClient.getInstance().player.playSound(SoundEvents.BLOCK_CHAIN_PLACE, 1.8f, 0.8f + MinecraftClient.getInstance().world.random.nextFloat() * 0.4f);
+            case FAILURE ->
+                    MinecraftClient.getInstance().player.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.8f, 0.8f + MinecraftClient.getInstance().world.random.nextFloat() * 0.4f);
+            case PASS -> {
+            }
+        }
+        ;
 
         if (result.getSuccess() != OperationResult.SuccessType.PASS && (!result.getMessage().isEmpty())) {
             warnPlayer("${result.success}: ${result.message}");

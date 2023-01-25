@@ -5,7 +5,6 @@ import com.marcuscastelo.invtweaks.crafting.Recipe
 import com.marcuscastelo.invtweaks.inventory.ScreenInventory
 import com.marcuscastelo.invtweaks.operation.OperationInfo
 import com.marcuscastelo.invtweaks.operation.OperationResult
-import com.marcuscastelo.invtweaks.operation.OperationType
 import com.marcuscastelo.invtweaks.util.ChatUtils
 import com.marcuscastelo.invtweaks.util.InvtweaksScreenController
 import net.minecraft.item.Item
@@ -212,21 +211,21 @@ object CraftHelper {
             return OperationResult.SUCCESS
         }
 
-        val originalCraftingResult = resultSlot.stack.item
+        val recipe = operationInfo.massCraftRecipe ?: Recipe(craftingSI.stacks, resultSlot.stack)
+        operationInfo.massCraftRecipe = recipe
 
         val screenController = InvtweaksScreenController(handler)
 
-        val recipe = Recipe(craftingSI.stacks)
         val resources = InventoryAnalyzer.searchRecipeItems(resourcesSI.stacks, recipe)
 
         val recipeItemCounts = InventoryAnalyzer.countItems(recipe.stacks)
         val resourceItemCounts = InventoryAnalyzer.countItems(resourcesSI.stacks)
 
-        fun resultChanged() = originalCraftingResult != resultSlot.stack.item
+        fun craftingResultChanged() = recipe.output.item != resultSlot.stack.item //TODO: Check for count too (NBT, etc.)
 
         fun craft() {
-            if (resultChanged()) {
-                ChatUtils.warnPlayer(" 22 Item in crafting table is not the original one, not crafting anymore! ($originalCraftingResult -> ${resultSlot.stack.item})")
+            if (craftingResultChanged()) {
+                ChatUtils.warnPlayer(" 22 Item in crafting table is not the original one, not crafting anymore! ($recipe.output.item -> ${resultSlot.stack.item})")
                 return
             }
 
@@ -237,8 +236,8 @@ object CraftHelper {
                 screenController.quickMove(resultSlot.id)
         }
 
-        if (resultChanged()) {
-            ChatUtils.warnPlayer("21 Item in crafting table is not the original one, not crafting anymore! ($originalCraftingResult -> ${resultSlot.stack.item})")
+        if (craftingResultChanged()) {
+            ChatUtils.warnPlayer("21 Item in crafting table is not the original one, not crafting anymore! ($recipe.output.item -> ${resultSlot.stack.item})")
             return OperationResult.SUCCESS
         }
 
@@ -249,8 +248,8 @@ object CraftHelper {
             spreadItemsInPlace(craftingSI)
             repeat(64) { craft() }
 
-            if (resultChanged()) {
-                ChatUtils.warnPlayer(" 23 Item in crafting table is not the original one, not crafting anymore! ($originalCraftingResult -> ${resultSlot.stack.item})")
+            if (craftingResultChanged()) {
+                ChatUtils.warnPlayer(" 23 Item in crafting table is not the original one, not crafting anymore! ($recipe.output.item -> ${resultSlot.stack.item})")
                 return OperationResult.SUCCESS
             }
 
@@ -266,8 +265,8 @@ object CraftHelper {
             com.marcuscastelo.invtweaks.behavior.CraftHelper.replenishRecipe(craftingSI, resourcesSI, recipe)
             com.marcuscastelo.invtweaks.behavior.CraftHelper.spreadItemsInPlace(craftingSI)
 
-            if (resultChanged()) {
-                ChatUtils.warnPlayer("aa Item in crafting table is not the original one, not crafting anymore! ($originalCraftingResult -> ${resultSlot.stack.item})")
+            if (craftingResultChanged()) {
+                ChatUtils.warnPlayer("aa Item in crafting table is not the original one, not crafting anymore! ($recipe.output.item -> ${resultSlot.stack.item})")
                 return OperationResult.SUCCESS
             }
 
@@ -295,7 +294,7 @@ object CraftHelper {
 
         return OperationResult(
                 success = OperationResult.SuccessType.SUCCESS,
-                message = "Crafted ${originalCraftingResult.name.string}",
+                message = "Crafted ${recipe.output.item.name.string}",
                 nextOperations = listOf(operationInfo)
         )
     }
