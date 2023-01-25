@@ -12,26 +12,12 @@ object InvTweaksBehaviorRegistry {
     private var behaviorMap = mutableMapOf<Class<out ScreenHandler>, IInvTweaksBehavior>()
     val behaviors: Map<Class<out ScreenHandler>, IInvTweaksBehavior> get() = behaviorMap
 
-    private val DEFAULT_BEHAVIOR = InvTweaksVanillaGenericBehavior()
+    val DEFAULT_BEHAVIOR = InvTweaksVanillaGenericBehavior()
 
     fun register(handlerClass: Class<out ScreenHandler>, behavior: IInvTweaksBehavior = InvTweaksVanillaGenericBehavior()): IInvTweaksBehavior {
         require(!behaviorMap.containsKey(handlerClass)) { "Screen $handlerClass is already registered" }
         behaviorMap[handlerClass] = behavior
         return behavior
-    }
-
-    fun executeOperation(screenHandlerClass: Class<out ScreenHandler>, intent: Intent): OperationResult {
-        val behavior = behaviorMap[screenHandlerClass] ?: run {
-            warnPlayer("Screen $screenHandlerClass doesn't have a behavior");
-            DEFAULT_BEHAVIOR
-        }
-
-        val executor = intent.type.asOperationExecutor(behavior)
-
-        return executor?.execute(intent) ?: run {
-            com.marcuscastelo.invtweaks.InvTweaksMod.LOGGER.warn("<InvTweaksBehaviorRegistry> Operation " + intent.type + " is not supported by " + behavior.javaClass)
-            pass("Operation " + intent.type + " is not supported by " + behavior.javaClass)
-        }
     }
 
     fun isScreenRegistered(screenHandlerClass: Class<out ScreenHandler>): Boolean {

@@ -5,7 +5,7 @@ import com.marcuscastelo.invtweaks.crafting.Recipe
 import com.marcuscastelo.invtweaks.inventory.ScreenInventory
 import com.marcuscastelo.invtweaks.intent.Intent
 import com.marcuscastelo.invtweaks.operation.OperationResult
-import com.marcuscastelo.invtweaks.operation.SimpleOperation
+import com.marcuscastelo.invtweaks.operation.IntentedOperation
 import com.marcuscastelo.invtweaks.util.ChatUtils
 import com.marcuscastelo.invtweaks.util.ScreenController
 import net.minecraft.item.Item
@@ -297,7 +297,7 @@ object CraftHelper {
         return OperationResult(
                 success = OperationResult.SuccessType.SUCCESS,
                 message = "Crafted ${recipe.output.item.name.string}",
-                nextOperations = listOf(SimpleOperation(intent))
+                nextOperations = listOf(IntentedOperation(intent))
         )
     }
 }

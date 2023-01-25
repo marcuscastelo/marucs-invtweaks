@@ -1,6 +1,5 @@
 package com.marcuscastelo.invtweaks.mixin;
 
-import com.marcuscastelo.invtweaks.InvTweaksMod;
 import com.marcuscastelo.invtweaks.input.InputProvider;
 import com.marcuscastelo.invtweaks.input.IntentTypeInterpreter;
 import com.marcuscastelo.invtweaks.intent.Intent;
@@ -180,8 +179,8 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> implements Par
 
         IntentContext context = new IntentContext(handler, slot, clickedSI, targetSI, screenInvs);
         Intent intent = new Intent(intentType, context, null);
-        SimpleOperation simpleOperation = new SimpleOperation(intent);
-        OperationPool.INSTANCE.addOperation(simpleOperation);
+        IntentedOperation intentedOperation = new IntentedOperation(intent);
+        OperationPool.INSTANCE.addOperation(intentedOperation);
         ci.cancel();
     }
 
