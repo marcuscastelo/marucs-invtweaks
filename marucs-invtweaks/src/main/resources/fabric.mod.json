@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "marucs-invtweaks",
+  "version": "${version}",
+  "name": "Marucs' Inventory Tweaks",
+  "description": "My personal implementation of the (g)old Minecraft mod Inventory Tweaks, but for fabric",
+  "authors": [
+    "marcuscastelo"
+  ],
+  "contact": {
+    "homepage": "https://github.com/marcuscastelo/marucs-invtweaks",
+    "issues": "https://github.com/marcuscastelo/marucs-invtweaks/issues",
+    "sources": "https://github.com/marcuscastelo/marucs-invtweaks"
+  },
+  "license": "MIT",
+  "icon": "assets/mod_name/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      {
+        "adapter": "kotlin",
+        "value": "com.marcuscastelo.invtweaks.InvTweaksMod"
+      }
+    ]
+  },
+  "mixins": [
+    "marucs_invtweaks.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${fabricloader}",
+    "fabric-api": ">=${fabric_api}",
+    "fabric-language-kotlin": ">=${fabric_language_kotlin}",
+    "minecraft": ">=${minecraft}",
+    "java": ">=${java}"
+  }
+}
