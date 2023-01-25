@@ -1,6 +1,5 @@
 package com.marcuscastelo.invtweaks.behavior
 
-import com.marcuscastelo.invtweaks.InvTweaksMod
 import com.marcuscastelo.invtweaks.crafting.InventoryAnalyzer
 import com.marcuscastelo.invtweaks.crafting.Recipe
 import com.marcuscastelo.invtweaks.inventory.ScreenInventory
@@ -223,27 +222,37 @@ object CraftHelper {
         val recipeItemCounts = InventoryAnalyzer.countItems(recipe.stacks)
         val resourceItemCounts = InventoryAnalyzer.countItems(resourcesSI.stacks)
 
+        fun resultChanged() = originalCraftingResult != resultSlot.stack.item
+
         fun craft() {
-            val currentItem = resultSlot.stack.item
-            if (originalCraftingResult != currentItem) {
-                ChatUtils.warnPlayer("Item in crafting table is not the original one, not crafting anymore! ($originalCraftingResult -> $currentItem)")
+            if (resultChanged()) {
+                ChatUtils.warnPlayer(" 22 Item in crafting table is not the original one, not crafting anymore! ($originalCraftingResult -> ${resultSlot.stack.item})")
                 return
             }
 
             fun isInventoryFull() = resourcesSI.stacks.all { it.isEmpty.not() }
             if (isInventoryFull())
                 screenController.dropOne(resultSlot.id)
-
-            screenController.quickMove(resultSlot.id)
+            else
+                screenController.quickMove(resultSlot.id)
         }
 
+        if (resultChanged()) {
+            ChatUtils.warnPlayer("21 Item in crafting table is not the original one, not crafting anymore! ($originalCraftingResult -> ${resultSlot.stack.item})")
+            return OperationResult.SUCCESS
+        }
 
         val missingItems = recipeItemCounts.filter { (item, count) -> (resourceItemCounts[item] ?: 0) < count }
         if (missingItems.isNotEmpty()) {
             // If we're missing items, we can't replenish the recipe,
             // but there may be some items in the crafting grid that we can still craft
-            com.marcuscastelo.invtweaks.behavior.CraftHelper.spreadItemsInPlace(craftingSI)
+            spreadItemsInPlace(craftingSI)
             repeat(64) { craft() }
+
+            if (resultChanged()) {
+                ChatUtils.warnPlayer(" 23 Item in crafting table is not the original one, not crafting anymore! ($originalCraftingResult -> ${resultSlot.stack.item})")
+                return OperationResult.SUCCESS
+            }
 
             ChatUtils.warnPlayer("Missing items: $missingItems")
             return OperationResult.failure("Missing items: $missingItems")
@@ -257,26 +266,32 @@ object CraftHelper {
             com.marcuscastelo.invtweaks.behavior.CraftHelper.replenishRecipe(craftingSI, resourcesSI, recipe)
             com.marcuscastelo.invtweaks.behavior.CraftHelper.spreadItemsInPlace(craftingSI)
 
+            if (resultChanged()) {
+                ChatUtils.warnPlayer("aa Item in crafting table is not the original one, not crafting anymore! ($originalCraftingResult -> ${resultSlot.stack.item})")
+                return OperationResult.SUCCESS
+            }
+
             craft()
             com.marcuscastelo.invtweaks.behavior.CraftHelper.replenishRecipe(craftingSI, resourcesSI, recipe)
             com.marcuscastelo.invtweaks.behavior.CraftHelper.spreadItemsInPlace(craftingSI)
+
         }
-
-        val spreadOperation = OperationInfo(
-                type = OperationType.SORT_NORMAL,
-                clickedSI = craftingSI,
-                clickedSlot = craftingSI.slots[1],
-                otherInventories = operationInfo.otherInventories,
-                targetSI = craftingSI,
-        )
-
-        val ignoreOperation = OperationInfo(
-                type = OperationType.IGNORE,
-                clickedSI = craftingSI,
-                clickedSlot = craftingSI.slots[1],
-                otherInventories = operationInfo.otherInventories,
-                targetSI = craftingSI,
-        )
+//
+//        val spreadOperation = OperationInfo(
+//                type = OperationType.SORT_NORMAL,
+//                clickedSI = craftingSI,
+//                clickedSlot = craftingSI.slots[1],
+//                otherInventories = operationInfo.otherInventories,
+//                targetSI = craftingSI,
+//        )
+//
+//        val ignoreOperation = OperationInfo(
+//                type = OperationType.IGNORE,
+//                clickedSI = craftingSI,
+//                clickedSlot = craftingSI.slots[1],
+//                otherInventories = operationInfo.otherInventories,
+//                targetSI = craftingSI,
+//        )
 
         return OperationResult(
                 success = OperationResult.SuccessType.SUCCESS,
