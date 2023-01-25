@@ -19,7 +19,7 @@
     "main": [
       {
         "adapter": "kotlin",
-        "value": "com.marcuscastelo.marucs_invtweaks.InvTweaks"
+        "value": "com.marcuscastelo.invtweaks.InvTweaksMod"
       }
     ]
   },
