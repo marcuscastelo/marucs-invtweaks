@@ -3,7 +3,7 @@ package com.marcuscastelo.invtweaks.operation
 class OperationResult(
         val success: SuccessType,
         val message: String = "",
-        val nextOperations: Iterable<OperationInfo> = listOf()
+        val nextOperations: Iterable<Operation<*>> = listOf()
 ) {
     enum class SuccessType {
         SUCCESS,

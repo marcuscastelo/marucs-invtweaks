@@ -1,6 +1,5 @@
 package com.marcuscastelo.invtweaks.util
 
-import com.marcuscastelo.invtweaks.InvTweaksMod
 import com.marcuscastelo.invtweaks.InvTweaksMod.Companion.LOGGER
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.network.ClientPlayerEntity
@@ -10,7 +9,7 @@ import net.minecraft.item.ItemStack
 import net.minecraft.screen.ScreenHandler
 import net.minecraft.screen.slot.SlotActionType
 
-class InvtweaksScreenController(private val handler: ScreenHandler) {
+class ScreenController(private val handler: ScreenHandler) {
     private val interaction: ClientPlayerInteractionManager = MinecraftClient.getInstance().interactionManager?: throw AssertionError("InteractionManager is null")
     private val player: ClientPlayerEntity = MinecraftClient.getInstance().player?: throw AssertionError("Player is null")
 
@@ -116,15 +115,15 @@ class InvtweaksScreenController(private val handler: ScreenHandler) {
         }
     }
 
-    private fun leftClick(slot: Int, actionType: SlotActionType) {
+    fun leftClick(slot: Int, actionType: SlotActionType) {
         click(slot, 0, actionType)
     }
 
-    private fun rightClick(slot: Int, actionType: SlotActionType) {
+    fun rightClick(slot: Int, actionType: SlotActionType) {
         click(slot, 1, actionType)
     }
 
-    private fun click(slot: Int, mouseButton: Int, actionType: SlotActionType) {
+    fun click(slot: Int, mouseButton: Int, actionType: SlotActionType) {
         interaction.clickSlot(handler.syncId, slot, mouseButton, actionType, player)
     }
 }

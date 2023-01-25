@@ -17,7 +17,8 @@ object Jesus {
             println("Trying to move more than we have InvTweaksVanillaBehavior@moveToSlot")
             return -1
         }
-    val interactionManager = MinecraftClient.getInstance().interactionManager
+
+        val interactionManager = MinecraftClient.getInstance().interactionManager
         val player = MinecraftClient.getInstance().player
         if (interactionManager == null || player == null) {
             println("nullptr in InvTweaksVanillaBehavior@moveSome")

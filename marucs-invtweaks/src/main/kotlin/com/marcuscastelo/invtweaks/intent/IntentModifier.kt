@@ -1,10 +1,10 @@
-package com.marcuscastelo.invtweaks.operation
+package com.marcuscastelo.invtweaks.intent
 
 import com.marcuscastelo.invtweaks.util.KeyUtils.isKeyPressed
 import net.minecraft.client.gui.screen.Screen
 import org.lwjgl.glfw.GLFW
 
-enum class OperationModifier(val representation: String, private val checkHotkeyFun: () -> Boolean) {
+enum class IntentModifier(val representation: String, private val checkHotkeyFun: () -> Boolean) {
     ONE("ONE", { Screen.hasControlDown() && !Screen.hasShiftDown() }) ,
     STACK("STACK", { !Screen.hasControlDown() && Screen.hasShiftDown() }),
     ALL("ALL", { !Screen.hasControlDown() && !Screen.hasShiftDown() && isKeyPressed(GLFW.GLFW_KEY_SPACE) }),

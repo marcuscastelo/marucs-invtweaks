@@ -1,13 +1,10 @@
 package com.marcuscastelo.invtweaks.behavior
 
-import com.marcuscastelo.invtweaks.InvTweaksMod
-import com.marcuscastelo.invtweaks.behavior.Jesus
-import com.marcuscastelo.invtweaks.operation.OperationInfo
+import com.marcuscastelo.invtweaks.intent.Intent
 import com.marcuscastelo.invtweaks.operation.OperationResult
 import com.marcuscastelo.invtweaks.operation.OperationResult.Companion.FAILURE
 import com.marcuscastelo.invtweaks.operation.OperationResult.Companion.SUCCESS
 import com.marcuscastelo.invtweaks.operation.OperationResult.Companion.pass
-import com.marcuscastelo.invtweaks.util.InventoryUtils
 import net.minecraft.client.MinecraftClient
 import net.minecraft.inventory.CraftingInventory
 import net.minecraft.item.Item
@@ -17,8 +14,8 @@ import net.minecraft.screen.slot.SlotActionType
 
 open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
 
-    protected val sortingComparator: Comparator<Item>
-        protected get() = Comparator.comparing { item: Item ->
+    private val sortingComparator: Comparator<Item>
+        get() = Comparator.comparing { item: Item ->
             val sb = StringBuilder()
             sb.append(if (item.group != null) item.group!!.name else "")
             sb.append(item.name)
@@ -26,13 +23,13 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
             sb.toString()
         }
 
-    override fun sort(operationInfo: OperationInfo): OperationResult {
-        if (operationInfo.clickedSlot.inventory is CraftingInventory)
-            return com.marcuscastelo.invtweaks.behavior.CraftHelper.spreadItemsInPlace(operationInfo.clickedSI)
+    override fun sort(intent: Intent): OperationResult {
+        if (intent.context.clickedSlot.inventory is CraftingInventory)
+            return com.marcuscastelo.invtweaks.behavior.CraftHelper.spreadItemsInPlace(intent.context.clickedSI)
 
-        val handler = operationInfo.clickedSI.screenHandler
-        val startSlot = operationInfo.clickedSI.start
-        val endSlot = operationInfo.clickedSI.end
+        val handler = intent.context.clickedSI.screenHandler
+        val startSlot = intent.context.clickedSI.start
+        val endSlot = intent.context.clickedSI.end
         val items: MutableSet<Item> = HashSet()
         val quantityPerItem = HashMap<Item, Int>()
         for (slot in startSlot..endSlot) {
@@ -59,102 +56,100 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
                     if (handler.slots[placedAt].stack.item !== item) destinationSlot++ //If different, no merging attempt is needed TODO: check if best approach
                 }
             }
-            while (handler.slots[destinationSlot].stack.item === item) destinationSlot++
+            while (destinationSlot < endSlot && handler.slots[destinationSlot].stack.item === item) destinationSlot++
         }
         return SUCCESS
     }
 
-    override fun moveAll(operationInfo: OperationInfo): OperationResult {
-        for (slotId in operationInfo.clickedSI.start..operationInfo.clickedSI.end) {
-            val stack = operationInfo.clickedSI.screenHandler.getSlot(slotId).stack
+    override fun moveAll(intent: Intent): OperationResult {
+        for (slotId in intent.context.clickedSI.start..intent.context.clickedSI.end) {
+            val stack = intent.context.clickedSI.screenHandler.getSlot(slotId).stack
             if (stack.item === Items.AIR) continue
-            val result = Jesus.moveToInventory(operationInfo.clickedSI.screenHandler, slotId, operationInfo.targetSI, stack.count, false)
+            val result = Jesus.moveToInventory(intent.context.clickedSI.screenHandler, slotId, intent.context.targetSI, stack.count, false)
             if (result == Jesus.MOVE_RESULT_FULL) break
         }
         return SUCCESS
     }
 
-    override fun dropAll(operationInfo: OperationInfo): OperationResult {
+    override fun dropAll(intent: Intent): OperationResult {
         val playerEntity = MinecraftClient.getInstance().player
-        for (slotId in operationInfo.clickedSI.start..operationInfo.clickedSI.end) {
-            MinecraftClient.getInstance().interactionManager!!.clickSlot(operationInfo.clickedSI.screenHandler.syncId, slotId, 1, SlotActionType.THROW, playerEntity)
+        for (slotId in intent.context.clickedSI.start..intent.context.clickedSI.end) {
+            MinecraftClient.getInstance().interactionManager!!.clickSlot(intent.context.clickedSI.screenHandler.syncId, slotId, 1, SlotActionType.THROW, playerEntity)
         }
         return SUCCESS
     }
 
-    override fun moveAllSameType(operationInfo: OperationInfo): OperationResult {
-        if (operationInfo.clickedSlot is CraftingResultSlot)
-            return com.marcuscastelo.invtweaks.behavior.CraftHelper.massCraft(operationInfo.clickedSlot, operationInfo)
+    override fun moveAllSameType(intent: Intent): OperationResult {
+        if (intent.context.clickedSlot is CraftingResultSlot)
+            return com.marcuscastelo.invtweaks.behavior.CraftHelper.massCraft(intent.context.clickedSlot, intent)
 
-        val itemType = operationInfo.clickedSlot.stack.item
-        for (slot in operationInfo.clickedSI.start..operationInfo.clickedSI.end) {
-            val stack = operationInfo.clickedSI.screenHandler.slots[slot].stack
+        val itemType = intent.context.clickedSlot.stack.item
+        for (slot in intent.context.clickedSI.start..intent.context.clickedSI.end) {
+            val stack = intent.context.clickedSI.screenHandler.slots[slot].stack
             if (stack.item !== itemType) continue
-            val result = Jesus.moveToInventory(operationInfo.clickedSI.screenHandler, slot, operationInfo.targetSI, stack.count, false)
+            val result = Jesus.moveToInventory(intent.context.clickedSI.screenHandler, slot, intent.context.targetSI, stack.count, false)
             if (result == Jesus.MOVE_RESULT_FULL) break
         }
         return SUCCESS
     }
 
-    override fun dropAllSameType(operationInfo: OperationInfo): OperationResult {
+    override fun dropAllSameType(intent: Intent): OperationResult {
         val playerEntity = MinecraftClient.getInstance().player
-        val itemType = operationInfo.clickedSlot.stack.item
-        for (slot in operationInfo.clickedSI.start..operationInfo.clickedSI.end) {
-            val stack = operationInfo.clickedSI.screenHandler.slots[slot].stack
+        val itemType = intent.context.clickedSlot.stack.item
+        for (slot in intent.context.clickedSI.start..intent.context.clickedSI.end) {
+            val stack = intent.context.clickedSI.screenHandler.slots[slot].stack
             if (stack.item !== itemType) continue
-            MinecraftClient.getInstance().interactionManager!!.clickSlot(operationInfo.clickedSI.screenHandler.syncId, slot, 1, SlotActionType.THROW, playerEntity)
+            MinecraftClient.getInstance().interactionManager!!.clickSlot(intent.context.clickedSI.screenHandler.syncId, slot, 1, SlotActionType.THROW, playerEntity)
         }
         return SUCCESS
     }
 
-    override fun moveOne(operationInfo: OperationInfo): OperationResult {
-        val handler = operationInfo.clickedSI.screenHandler
-        val from = operationInfo.clickedSlot.id
-        val result = Jesus.moveToInventory(handler, from, operationInfo.targetSI, 1, false)
+    override fun moveOne(intent: Intent): OperationResult {
+        val handler = intent.context.clickedSI.screenHandler
+        val from = intent.context.clickedSlot.id
+        val result = Jesus.moveToInventory(handler, from, intent.context.targetSI, 1, false)
         return SUCCESS
     }
 
-    override fun dropOne(operationInfo: OperationInfo): OperationResult {
+    override fun dropOne(intent: Intent): OperationResult {
         val playerEntity = MinecraftClient.getInstance().player
-        MinecraftClient.getInstance().interactionManager!!.clickSlot(operationInfo.clickedSI.screenHandler.syncId, operationInfo.clickedSlot.id, 0, SlotActionType.THROW, playerEntity)
+        MinecraftClient.getInstance().interactionManager!!.clickSlot(intent.context.clickedSI.screenHandler.syncId, intent.context.clickedSlot.id, 0, SlotActionType.THROW, playerEntity)
         return SUCCESS
     }
 
-    override fun moveStack(operationInfo: OperationInfo): OperationResult {
-
-
-        com.marcuscastelo.invtweaks.InvTweaksMod.LOGGER.info("moveStack in ${operationInfo.clickedSI.screenHandler}")
-        com.marcuscastelo.invtweaks.InvTweaksMod.LOGGER.info("clickedSlot: ${operationInfo.clickedSlot}; class: ${operationInfo.clickedSlot.javaClass}")
-        if (operationInfo.clickedSlot is CraftingResultSlot) {
+    override fun moveStack(intent: Intent): OperationResult {
+        com.marcuscastelo.invtweaks.InvTweaksMod.LOGGER.info("moveStack in ${intent.context.clickedSI.screenHandler}")
+        com.marcuscastelo.invtweaks.InvTweaksMod.LOGGER.info("clickedSlot: ${intent.context.clickedSlot}; class: ${intent.context.clickedSlot.javaClass}")
+        if (intent.context.clickedSlot is CraftingResultSlot) {
             return pass("Use vanilla crafting for moveStack in crafting output slot")
         }
 
-        val handler = operationInfo.clickedSI.screenHandler
-        val from = operationInfo.clickedSlot.id
-        val stack = operationInfo.clickedSlot.stack
-        Jesus.moveToInventory(handler, from, operationInfo.targetSI, stack.count, false)
+        val handler = intent.context.clickedSI.screenHandler
+        val from = intent.context.clickedSlot.id
+        val stack = intent.context.clickedSlot.stack
+//        Jesus.moveToInventory(handler, from, intent.context.targetSI, stack.count, false)
         return SUCCESS
     }
 
-    override fun dropStack(operationInfo: OperationInfo): OperationResult {
+    override fun dropStack(intent: Intent): OperationResult {
         val playerEntity = MinecraftClient.getInstance().player
-        MinecraftClient.getInstance().interactionManager!!.clickSlot(operationInfo.clickedSI.screenHandler.syncId, operationInfo.clickedSlot.id, 1, SlotActionType.THROW, playerEntity)
+        MinecraftClient.getInstance().interactionManager!!.clickSlot(intent.context.clickedSI.screenHandler.syncId, intent.context.clickedSlot.id, 1, SlotActionType.THROW, playerEntity)
         return SUCCESS
     }
 
-    override fun craftOne(operationInfo: OperationInfo?): OperationResult {
+    override fun craftOne(intent: Intent?): OperationResult {
         return FAILURE
     }
 
-    override fun craftStack(operationInfo: OperationInfo?): OperationResult {
+    override fun craftStack(intent: Intent?): OperationResult {
         return FAILURE
     }
 
-    override fun craftAll(operationInfo: OperationInfo?): OperationResult {
+    override fun craftAll(intent: Intent?): OperationResult {
         return FAILURE
     }
 
-    override fun craftAllSameType(operationInfo: OperationInfo?): OperationResult {
+    override fun craftAllSameType(intent: Intent?): OperationResult {
         return FAILURE
     }
 }

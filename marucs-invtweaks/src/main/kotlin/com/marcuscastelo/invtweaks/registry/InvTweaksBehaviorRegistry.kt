@@ -1,12 +1,10 @@
 package com.marcuscastelo.invtweaks.registry
 
-import com.marcuscastelo.invtweaks.InvTweaksMod
 import com.marcuscastelo.invtweaks.behavior.*
-import com.marcuscastelo.invtweaks.operation.OperationInfo
+import com.marcuscastelo.invtweaks.intent.Intent
 import com.marcuscastelo.invtweaks.operation.OperationResult
 import com.marcuscastelo.invtweaks.operation.OperationResult.Companion.pass
 import com.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer
-import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen
 import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen.CreativeScreenHandler
 import net.minecraft.screen.*
 
@@ -22,17 +20,17 @@ object InvTweaksBehaviorRegistry {
         return behavior
     }
 
-    fun executeOperation(screenHandlerClass: Class<out ScreenHandler>, operationInfo: OperationInfo): OperationResult {
+    fun executeOperation(screenHandlerClass: Class<out ScreenHandler>, intent: Intent): OperationResult {
         val behavior = behaviorMap[screenHandlerClass] ?: run {
             warnPlayer("Screen $screenHandlerClass doesn't have a behavior");
             DEFAULT_BEHAVIOR
         }
 
-        val executor = operationInfo.type.asOperationExecutor(behavior)
+        val executor = intent.type.asOperationExecutor(behavior)
 
-        return executor?.execute(operationInfo) ?: run {
-            com.marcuscastelo.invtweaks.InvTweaksMod.LOGGER.warn("<InvTweaksBehaviorRegistry> Operation " + operationInfo.type + " is not supported by " + behavior.javaClass)
-            pass("Operation " + operationInfo.type + " is not supported by " + behavior.javaClass)
+        return executor?.execute(intent) ?: run {
+            com.marcuscastelo.invtweaks.InvTweaksMod.LOGGER.warn("<InvTweaksBehaviorRegistry> Operation " + intent.type + " is not supported by " + behavior.javaClass)
+            pass("Operation " + intent.type + " is not supported by " + behavior.javaClass)
         }
     }
 

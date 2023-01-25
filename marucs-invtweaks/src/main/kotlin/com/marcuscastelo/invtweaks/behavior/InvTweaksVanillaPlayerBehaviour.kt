@@ -1,15 +1,13 @@
 package com.marcuscastelo.invtweaks.behavior
 
 import com.marcuscastelo.invtweaks.inventory.ScreenInventory
-import com.marcuscastelo.invtweaks.operation.OperationInfo
+import com.marcuscastelo.invtweaks.intent.Intent
 import com.marcuscastelo.invtweaks.operation.OperationResult
 import com.marcuscastelo.invtweaks.operation.OperationResult.Companion.FAILURE
-import com.marcuscastelo.invtweaks.operation.OperationResult.Companion.failure
 import com.marcuscastelo.invtweaks.operation.OperationResult.Companion.pass
 import com.marcuscastelo.invtweaks.util.KeyUtils.isKeyPressed
 import net.minecraft.item.ItemStack
 import net.minecraft.screen.PlayerScreenHandler
-import net.minecraft.screen.ScreenHandler
 import org.lwjgl.glfw.GLFW
 
 class InvTweaksVanillaPlayerBehaviour : InvTweaksVanillaGenericBehavior() {
@@ -17,17 +15,17 @@ class InvTweaksVanillaPlayerBehaviour : InvTweaksVanillaGenericBehavior() {
         return slotId in 5..8
     }
 
-    override fun sort(operationInfo: OperationInfo): OperationResult {
+    override fun sort(intent: Intent): OperationResult {
         //Do not sort armor
-        return if (isArmorSlot(operationInfo.clickedSlot.id)) FAILURE else super.sort(operationInfo)
+        return if (isArmorSlot(intent.context.clickedSlot.id)) FAILURE else super.sort(intent)
     }
 
-    override fun moveAllSameType(operationInfo: OperationInfo): OperationResult {
-        return super.moveAllSameType(operationInfo)
+    override fun moveAllSameType(intent: Intent): OperationResult {
+        return super.moveAllSameType(intent)
     }
 
-    fun isMoveableToArmorSlot(operationInfo: OperationInfo, itemStack: ItemStack?): Boolean {
-        val screenHandler = operationInfo.clickedSI.screenHandler
+    fun isMoveableToArmorSlot(intent: Intent, itemStack: ItemStack?): Boolean {
+        val screenHandler = intent.context.clickedSI.screenHandler
         val armorInv = ScreenInventory(screenHandler, 5, 8)
         var moveableToArmorInv = false
         for (slotId in armorInv.slotRange) {
@@ -40,24 +38,20 @@ class InvTweaksVanillaPlayerBehaviour : InvTweaksVanillaGenericBehavior() {
         return moveableToArmorInv
     }
 
-    override fun moveStack(operationInfo: OperationInfo): OperationResult {
-
-
-
-        var operationInfo = operationInfo
-        val itemStack = operationInfo.clickedSlot.stack
-        val screenHandler = operationInfo.clickedSI.screenHandler
+    override fun moveStack(intent: Intent): OperationResult {
+        val itemStack = intent.context.clickedSlot.stack
+        val screenHandler = intent.context.clickedSI.screenHandler
         assert(screenHandler is PlayerScreenHandler)
         //Keep the same behavior for armor
         val isTrendedMovement = isKeyPressed(GLFW.GLFW_KEY_S) || isKeyPressed(GLFW.GLFW_KEY_W)
-        val isClickInArmorOrCraft = operationInfo.clickedSI.start <= 8
-        if (!isTrendedMovement && isMoveableToArmorSlot(operationInfo, itemStack) && !isClickInArmorOrCraft) {
+        val isClickInArmorOrCraft = intent.context.clickedSI.start <= 8
+        if (!isTrendedMovement && isMoveableToArmorSlot(intent, itemStack) && !isClickInArmorOrCraft) {
             return pass("Using vanilla behavior for armor")
         }
 
 //            int clickedSlotId = operationInfo.clickedSlot().id;
 //            MinecraftClient.getInstance().interactionManager.clickSlot(screenHandler.syncId, clickedSlotId, 0, SlotActionType.QUICK_MOVE, MinecraftClient.getInstance().player);
 //            return; //Minecraft default behavior
-        return super.moveStack(operationInfo)
+        return super.moveStack(intent)
     }
 }

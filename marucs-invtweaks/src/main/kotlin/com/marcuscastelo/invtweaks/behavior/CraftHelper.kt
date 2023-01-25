@@ -3,10 +3,11 @@ package com.marcuscastelo.invtweaks.behavior
 import com.marcuscastelo.invtweaks.crafting.InventoryAnalyzer
 import com.marcuscastelo.invtweaks.crafting.Recipe
 import com.marcuscastelo.invtweaks.inventory.ScreenInventory
-import com.marcuscastelo.invtweaks.operation.OperationInfo
+import com.marcuscastelo.invtweaks.intent.Intent
 import com.marcuscastelo.invtweaks.operation.OperationResult
+import com.marcuscastelo.invtweaks.operation.SimpleOperation
 import com.marcuscastelo.invtweaks.util.ChatUtils
-import com.marcuscastelo.invtweaks.util.InvtweaksScreenController
+import com.marcuscastelo.invtweaks.util.ScreenController
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.screen.slot.CraftingResultSlot
@@ -82,7 +83,7 @@ object CraftHelper {
 
     fun spreadItemsInPlace(gridSI: ScreenInventory): OperationResult {
         val handler = gridSI.screenHandler
-        val screenController = InvtweaksScreenController(handler)
+        val screenController = ScreenController(handler)
         val currentRecipeStacks = com.marcuscastelo.invtweaks.behavior.CraftHelper.getCurrentRecipeStacks(gridSI) // TODO: use Recipe class
         val itemCountInfo = com.marcuscastelo.invtweaks.behavior.CraftHelper.countItemsOnRecipeStacks(currentRecipeStacks)
         val itemCountsPerSlot = com.marcuscastelo.invtweaks.behavior.CraftHelper.calcSpreadItemCountPerSlot(itemCountInfo)
@@ -121,7 +122,7 @@ object CraftHelper {
     }
 
     fun searchForItem(stacks: ScreenInventory, item: Item): Int {
-        val screenController = InvtweaksScreenController(stacks.screenHandler)
+        val screenController = ScreenController(stacks.screenHandler)
         for (slotId in stacks.start..stacks.end) {
             val stack = screenController.getStack(slotId)
             if (stack.isOf(item)) {
@@ -132,9 +133,9 @@ object CraftHelper {
     }
 
 
-    fun replenishRecipe(gridSI: ScreenInventory, resourcesSI: ScreenInventory, recipe: Recipe, hackAlreadyCrafted: Int = 0): Boolean {
+    fun replenishRecipe(gridSI: ScreenInventory, resourcesSI: ScreenInventory, recipe: Recipe): Boolean {
         val handler = gridSI.screenHandler
-        val screenController = InvtweaksScreenController(handler)
+        val screenController = ScreenController(handler)
         val gridStart = gridSI.start
         var ranOutOfMaterials = true // Assume we ran out of materials (until proven otherwise)
 
@@ -199,22 +200,23 @@ object CraftHelper {
         return ranOutOfMaterials
     }
 
-    fun massCraft(resultSlot: CraftingResultSlot, operationInfo: OperationInfo): OperationResult {
-        val inventories = operationInfo.otherInventories
+    fun massCraft(resultSlot: CraftingResultSlot, intent: Intent): OperationResult {
+        val inventories = intent.context.otherInventories
         val craftingSI = inventories.craftingSI.orElse(null) ?: return OperationResult.failure("No crafting inventory found")
         val resourcesSI = inventories.playerCombinedSI
 
         val handler = craftingSI.screenHandler
 
+        return OperationResult.SUCCESS
         if (resultSlot.stack.isEmpty) {
             ChatUtils.warnPlayer("Nothing to craft")
             return OperationResult.SUCCESS
         }
 
-        val recipe = operationInfo.massCraftRecipe ?: Recipe(craftingSI.stacks, resultSlot.stack)
-        operationInfo.massCraftRecipe = recipe
+        val recipe = intent.massCraftRecipe ?: Recipe(craftingSI.stacks, resultSlot.stack)
+        intent.massCraftRecipe = recipe
 
-        val screenController = InvtweaksScreenController(handler)
+        val screenController = ScreenController(handler)
 
         val resources = InventoryAnalyzer.searchRecipeItems(resourcesSI.stacks, recipe)
 
@@ -295,7 +297,7 @@ object CraftHelper {
         return OperationResult(
                 success = OperationResult.SuccessType.SUCCESS,
                 message = "Crafted ${recipe.output.item.name.string}",
-                nextOperations = listOf(operationInfo)
+                nextOperations = listOf(SimpleOperation(intent))
         )
     }
 }

@@ -1,18 +1,18 @@
 package com.marcuscastelo.invtweaks.mixin;
 
-import com.google.common.collect.Streams;
 import com.marcuscastelo.invtweaks.InvTweaksMod;
 import com.marcuscastelo.invtweaks.input.InputProvider;
-import com.marcuscastelo.invtweaks.input.OperationTypeInterpreter;
+import com.marcuscastelo.invtweaks.input.IntentTypeInterpreter;
+import com.marcuscastelo.invtweaks.intent.Intent;
+import com.marcuscastelo.invtweaks.intent.IntentContext;
+import com.marcuscastelo.invtweaks.intent.IntentType;
 import com.marcuscastelo.invtweaks.operation.*;
 import com.marcuscastelo.invtweaks.config.InvtweaksConfig;
 import com.marcuscastelo.invtweaks.inventory.ScreenInventories;
 import com.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import com.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry;
-import com.marcuscastelo.invtweaks.util.KeyUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.ParentElement;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Items;
@@ -32,7 +32,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 import static com.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer;
@@ -133,7 +132,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> implements Par
         invs.allInvs().forEach(inv -> warnPlayer(inv.getClass().getName()));
     }
 
-    ArrayList<OperationInfo> queuedOperations = new ArrayList<>();
+    ArrayList<Intent> queuedOperations = new ArrayList<>();
 
     @Inject(method = "onMouseClick(Lnet/minecraft/screen/slot/Slot;IILnet/minecraft/screen/slot/SlotActionType;)V", at = @At("HEAD"), cancellable = true)
     protected void onMouseClick(Slot slot, int invSlot, int pressedButton, SlotActionType actionType, CallbackInfo ci) {
@@ -172,31 +171,18 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> implements Par
         }
 
         InputProvider inputProvider = new InputProvider(pressedButton);
-        OperationType operationType = OperationTypeInterpreter.INSTANCE.interpret(inputProvider);
-        if (operationType == null) {
+        IntentType intentType = IntentTypeInterpreter.INSTANCE.interpret(inputProvider);
+
+        if (intentType == null) {
             warnPlayer("Operation type is null");
             return;
         }
 
-        OperationInfo operationInfo = new OperationInfo(
-                operationType, slot, clickedSI, targetSI, screenInvs, null
-        );
-
-        try {
-            OperationResult result = executeAndQueueOperation(operationInfo);
-            if (result.getSuccess() == OperationResult.SuccessType.SUCCESS) {
-                ci.cancel();
-            }
-        } catch (IllegalArgumentException e) {
-            warnPlayer("Operation not supported: " + e.getMessage());
-            warnPlayer("Operation info: " + operationInfo);
-            warnPlayer("Operation type: " + operationType);
-            warnPlayer("Clicked slot: " + slot);
-            warnPlayer("Clicked inventory: " + clickedSI);
-            warnPlayer("Other inventory: " + targetSI);
-            warnPlayer("Handler: " + handler);
-        }
-
+        IntentContext context = new IntentContext(handler, slot, clickedSI, targetSI, screenInvs);
+        Intent intent = new Intent(intentType, context, null);
+        SimpleOperation simpleOperation = new SimpleOperation(intent);
+        OperationPool.INSTANCE.addOperation(simpleOperation);
+        ci.cancel();
     }
 
     public void debugHotKeyTick() {
@@ -218,25 +204,11 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> implements Par
         }
     }
 
-
     @Inject(at = @At("HEAD"), method = "tick")
     public void tick(CallbackInfo ci) {
         debugHotKeyTick();
 
-        if (queuedOperations.isEmpty()) return;
-        OperationInfo operationInfo = queuedOperations.remove(0);
-        InvTweaksMod.getLOGGER().info("Executing queued operation: " + operationInfo);
-
-        try {
-            OperationResult result = executeAndQueueOperation(operationInfo);
-        } catch (IllegalArgumentException ignored) {
-        }
-    }
-
-    private OperationResult executeAndQueueOperation(OperationInfo operationInfo) {
-        InvTweaksMod.getLOGGER().info("Executing operation: $operationInfo");
-        OperationResult result = InvTweaksBehaviorRegistry.INSTANCE.executeOperation(handler.getClass(), operationInfo);
-        result.getNextOperations().forEach(e -> queuedOperations.add(e));
+        OperationResult result = OperationPool.INSTANCE.executeNextOperation();
         switch (result.getSuccess()) {
             case SUCCESS ->
                     MinecraftClient.getInstance().player.playSound(SoundEvents.BLOCK_CHAIN_PLACE, 1.8f, 0.8f + MinecraftClient.getInstance().world.random.nextFloat() * 0.4f);
@@ -245,11 +217,11 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> implements Par
             case PASS -> {
             }
         }
-        ;
+
+        result.getNextOperations().forEach(OperationPool.INSTANCE::addOperation);
 
         if (result.getSuccess() != OperationResult.SuccessType.PASS && (!result.getMessage().isEmpty())) {
-            warnPlayer("${result.success}: ${result.message}");
+            warnPlayer("${result.success}: " + result.getMessage());
         }
-        return result;
     }
 }
