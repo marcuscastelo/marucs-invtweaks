@@ -1,5 +1,7 @@
 package com.marcuscastelo.invtweaks.operation
 
+import com.marcuscastelo.invtweaks.intent.Intent
+
 class OperationResult(
         val success: SuccessType,
         val message: String = "",

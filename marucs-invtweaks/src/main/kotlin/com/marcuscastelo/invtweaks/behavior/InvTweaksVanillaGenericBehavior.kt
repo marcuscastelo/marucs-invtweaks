@@ -81,7 +81,7 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
 
     override fun moveAllSameType(intent: Intent): OperationResult {
         if (intent.context.clickedSlot is CraftingResultSlot)
-            return com.marcuscastelo.invtweaks.behavior.CraftHelper.massCraft(intent.context.clickedSlot, intent)
+            return CraftHelper.massCraft(intent.context.clickedSlot, intent)
 
         val itemType = intent.context.clickedSlot.stack.item
         for (slot in intent.context.clickedSI.start..intent.context.clickedSI.end) {
@@ -121,6 +121,12 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
         com.marcuscastelo.invtweaks.InvTweaksMod.LOGGER.info("moveStack in ${intent.context.clickedSI.screenHandler}")
         com.marcuscastelo.invtweaks.InvTweaksMod.LOGGER.info("clickedSlot: ${intent.context.clickedSlot}; class: ${intent.context.clickedSlot.javaClass}")
         if (intent.context.clickedSlot is CraftingResultSlot) {
+            val syncId = intent.context.clickedSI.screenHandler.syncId
+            val slotId = intent.context.clickedSlot.id
+            val button = 0
+            val actionType = SlotActionType.QUICK_MOVE
+            val player = MinecraftClient.getInstance().player
+            MinecraftClient.getInstance().interactionManager!!.clickSlot(syncId, slotId, button, actionType, player)
             return pass("Use vanilla crafting for moveStack in crafting output slot")
         }
 

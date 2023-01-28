@@ -9,6 +9,7 @@ import com.marcuscastelo.invtweaks.intent.IntentType
 import com.marcuscastelo.invtweaks.operation.*
 import com.marcuscastelo.invtweaks.util.ChatUtils
 import com.marcuscastelo.invtweaks.util.ScreenController
+import net.minecraft.client.MinecraftClient
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.screen.slot.CraftingResultSlot
@@ -219,7 +220,6 @@ object CraftHelper {
                 ?: return OperationResult.failure("No crafting result inventory found")
         val resourcesSI = intent.context.otherInventories.playerCombinedSI
 
-
         val replenishOperation = ReplenishRecipeOperation(
                 ReplenishData(
                         originalIntent = intent,
@@ -228,14 +228,15 @@ object CraftHelper {
         )
 
         val craftIntent = Intent(
-                type = IntentType.DROP_STACK,
+                type = IntentType.MOVE_STACK,
                 context = IntentContext(
                         screenHandler = craftingResultSI.screenHandler,
                         clickedSlot = resultSlot,
                         otherInventories = intent.context.otherInventories,
                         targetSI = resourcesSI,
                         clickedSI = craftingResultSI,
-                        slotActionType = SlotActionType.THROW,
+                        slotActionType = SlotActionType.QUICK_MOVE,
+                        button = 0,
                 )
         )
 
@@ -247,13 +248,13 @@ object CraftHelper {
                 )
         )
 
-        val operations = listOf(replenishOperation, craftOperation, craftOperation, IntentedOperation(intent))
-        val chainedOperation = AndOperation(operations)
-
+        val operationsToChain = listOf(replenishOperation, DelayOperation(AndOperation(listOf(craftOperation, IntentedOperation(intent))), 20u))
+        val chainedOperations = AndOperation(operationsToChain)
+        val operations = listOf(chainedOperations)
         return OperationResult(
                 success = OperationResult.SuccessType.SUCCESS,
                 message = "Requesting replenish operation",
-                nextOperations = listOf(chainedOperation)
+                nextOperations = operations
         )
     }
 

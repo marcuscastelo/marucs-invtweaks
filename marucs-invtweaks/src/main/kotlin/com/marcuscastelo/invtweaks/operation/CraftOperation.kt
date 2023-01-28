@@ -27,7 +27,7 @@ class CraftOperation(val craftData: CraftData) : Operation<CraftData>() {
         val currentOutput = craftingResultSI.slots[0].stack.copy()
 
         if (expectedOutput.item != currentOutput.item) {
-            yield(OperationResult.pass("Warning: Expected output item ${expectedOutput.name} but got ${currentOutput.name}")
+            yield(OperationResult.failure("Warning: Expected output item ${expectedOutput.name} but got ${currentOutput.name}")
                     .also { com.marcuscastelo.invtweaks.InvTweaksMod.LOGGER.warn(it.message) })
             return@sequence
         }

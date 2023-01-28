@@ -13,6 +13,7 @@ import com.marcuscastelo.invtweaks.inventory.ScreenInventory;
 import com.marcuscastelo.invtweaks.registry.InvTweaksBehaviorRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.ParentElement;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Items;
@@ -21,11 +22,9 @@ import net.minecraft.screen.slot.CraftingResultSlot;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
-import org.spongepowered.asm.mixin.Debug;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -41,7 +40,7 @@ import static com.marcuscastelo.invtweaks.util.KeyUtils.isKeyPressed;
 
 @Mixin(HandledScreen.class)
 @Debug(export = true)
-public abstract class MixinHandledScreen<T extends ScreenHandler> implements ParentElement {
+public abstract class MixinHandledScreen<T extends ScreenHandler> extends Screen implements ParentElement {
     private final int MIDDLE_CLICK = GLFW.GLFW_MOUSE_BUTTON_MIDDLE;
 
     @Shadow
@@ -49,6 +48,10 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> implements Par
     protected T handler;
 
     private boolean _middleClickBypass = false;
+
+    protected MixinHandledScreen(Text title) {
+        super(title);
+    }
 
     private boolean isBypassActive() {
         return _middleClickBypass;
@@ -181,7 +184,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> implements Par
             return;
         }
 
-        IntentContext context = new IntentContext(handler, slot, clickedSI, targetSI, actionType, screenInvs);
+        IntentContext context = new IntentContext(handler, slot, clickedSI, targetSI, actionType, pressedButton, screenInvs);
         Intent intent = new Intent(intentType, context);
         IntentedOperation intentedOperation = new IntentedOperation(intent);
         TickedOperationPool.INSTANCE.addOperation(intentedOperation);
@@ -231,4 +234,14 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> implements Par
             }
         }
     }
+
+    /**
+//     * @author Marcus
+//     * @reason Clear the operation pool when the screen is closed
+//     */
+//    @Overwrite
+//    public void close() {
+//        TickedOperationPool.INSTANCE.clear();
+//        super.close();
+//    }
 }
