@@ -127,7 +127,7 @@ open class InvTweaksVanillaGenericBehavior : IInvTweaksBehavior {
         val handler = intent.context.clickedSI.screenHandler
         val from = intent.context.clickedSlot.id
         val stack = intent.context.clickedSlot.stack
-//        Jesus.moveToInventory(handler, from, intent.context.targetSI, stack.count, false)
+        Jesus.moveToInventory(handler, from, intent.context.targetSI, stack.count, false)
         return SUCCESS
     }
 

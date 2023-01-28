@@ -1,5 +1,6 @@
 package com.marcuscastelo.invtweaks.mixin;
 
+import com.marcuscastelo.invtweaks.InvTweaksMod;
 import com.marcuscastelo.invtweaks.input.InputProvider;
 import com.marcuscastelo.invtweaks.input.IntentTypeInterpreter;
 import com.marcuscastelo.invtweaks.intent.Intent;
@@ -21,6 +22,7 @@ import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.sound.SoundEvents;
 import org.lwjgl.glfw.GLFW;
+import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -31,12 +33,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import static com.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer;
 import static com.marcuscastelo.invtweaks.util.KeyUtils.isKeyPressed;
 
 @Mixin(HandledScreen.class)
+@Debug(export = true)
 public abstract class MixinHandledScreen<T extends ScreenHandler> implements ParentElement {
     private final int MIDDLE_CLICK = GLFW.GLFW_MOUSE_BUTTON_MIDDLE;
 
@@ -177,10 +181,10 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> implements Par
             return;
         }
 
-        IntentContext context = new IntentContext(handler, slot, clickedSI, targetSI, screenInvs);
-        Intent intent = new Intent(intentType, context, null);
+        IntentContext context = new IntentContext(handler, slot, clickedSI, targetSI, actionType, screenInvs);
+        Intent intent = new Intent(intentType, context);
         IntentedOperation intentedOperation = new IntentedOperation(intent);
-        OperationPool.INSTANCE.addOperation(intentedOperation);
+        TickedOperationPool.INSTANCE.addOperation(intentedOperation);
         ci.cancel();
     }
 
@@ -205,22 +209,26 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> implements Par
 
     @Inject(at = @At("HEAD"), method = "tick")
     public void tick(CallbackInfo ci) {
+        if (MinecraftClient.getInstance().world.getTime() % 2 != 0) return;
         debugHotKeyTick();
+        assert MinecraftClient.getInstance().world != null;
+        InvTweaksMod.getLOGGER().debug("Tick #" + MinecraftClient.getInstance().world.getTime());
+        for (Iterator<OperationResult> it = TickedOperationPool.INSTANCE.tick().iterator(); it.hasNext(); ) {
+            OperationResult result = it.next();
 
-        OperationResult result = OperationPool.INSTANCE.executeNextOperation();
-        switch (result.getSuccess()) {
-            case SUCCESS ->
-                    MinecraftClient.getInstance().player.playSound(SoundEvents.BLOCK_CHAIN_PLACE, 1.8f, 0.8f + MinecraftClient.getInstance().world.random.nextFloat() * 0.4f);
-            case FAILURE ->
-                    MinecraftClient.getInstance().player.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.8f, 0.8f + MinecraftClient.getInstance().world.random.nextFloat() * 0.4f);
-            case PASS -> {
+            switch (result.getSuccess()) {
+                case SUCCESS ->
+                        MinecraftClient.getInstance().player.playSound(SoundEvents.BLOCK_CHAIN_PLACE, 1.8f, 0.8f + MinecraftClient.getInstance().world.random.nextFloat() * 0.4f);
+                case FAILURE ->
+                        MinecraftClient.getInstance().player.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.8f, 0.8f + MinecraftClient.getInstance().world.random.nextFloat() * 0.4f);
+                case PASS -> {}
             }
-        }
 
-        result.getNextOperations().forEach(OperationPool.INSTANCE::addOperation);
+            result.getNextOperations().forEach(TickedOperationPool.INSTANCE::addOperation);
 
-        if (result.getSuccess() != OperationResult.SuccessType.PASS && (!result.getMessage().isEmpty())) {
-            warnPlayer("${result.success}: " + result.getMessage());
+            if (result.getSuccess() != OperationResult.SuccessType.PASS && (!result.getMessage().isEmpty())) {
+                warnPlayer("${result.success}: " + result.getMessage());
+            }
         }
     }
 }

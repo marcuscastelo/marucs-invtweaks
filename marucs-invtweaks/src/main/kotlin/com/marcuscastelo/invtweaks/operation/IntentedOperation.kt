@@ -11,7 +11,7 @@ import com.marcuscastelo.invtweaks.util.ChatUtils
 class IntentedOperation(intent: Intent) : Operation<Intent>() {
     override val operationData = intent
 
-    override fun execute(): OperationResult {
+    override fun execute() = sequence {
         ChatUtils.warnPlayer("Executing operation ${operationData.type} on ${operationData.context.screenHandler.javaClass}", true)
 
         val intent = operationData
@@ -21,15 +21,16 @@ class IntentedOperation(intent: Intent) : Operation<Intent>() {
             InvTweaksBehaviorRegistry.DEFAULT_BEHAVIOR
         }
 
-        val executor = intent.type.asOperationExecutor(behavior) ?: { intentToExecute: Intent ->
+        val executor = intent.type.getExecutorFor(behavior) ?: { intentToExecute: Intent ->
             com.marcuscastelo.invtweaks.InvTweaksMod.LOGGER.warn("<InvTweaksBehaviorRegistry> Operation " + intentToExecute.type + " is not supported by " + behavior.javaClass)
             OperationResult.pass("Operation " + intentToExecute.type + " is not supported by " + behavior.javaClass)
         }
 
-        return executor(intent)
+        yield(executor(intent))
+        return@sequence
     }
 
-    fun IntentType.asOperationExecutor(behavior: IInvTweaksBehavior): ((Intent) -> OperationResult)? {
+    fun IntentType.getExecutorFor(behavior: IInvTweaksBehavior): ((Intent) -> OperationResult)? {
         //TODO: remove this function and make a registry for OperationExecutors?
         fun cast(function: (Intent) -> OperationResult) = function
 
