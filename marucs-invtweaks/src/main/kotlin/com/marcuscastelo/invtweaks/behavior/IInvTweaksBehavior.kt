@@ -9,7 +9,7 @@ interface IInvTweaksBehavior {
     fun sort(intent: Intent): OperationResult
     fun pickupStack(intent: Intent): OperationResult { //TODO: standardize this function
         ScreenController(intent.context.screenHandler).click(intent.context.clickedSlot.id, intent.context.button, SlotActionType.PICKUP)
-        return OperationResult.success("Picked up stack from slot ${intent.context.clickedSlot.id}")
+        return OperationResult.SUCCESS
     }
 
     fun moveAll(intent: Intent): OperationResult

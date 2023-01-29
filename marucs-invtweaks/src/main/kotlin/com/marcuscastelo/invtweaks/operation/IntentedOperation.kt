@@ -12,7 +12,6 @@ class IntentedOperation(intent: Intent) : Operation<Intent>() {
     override val operationData = intent
 
     override fun execute() = sequence {
-        ChatUtils.warnPlayer("Executing operation ${operationData.type} on ${operationData.context.screenHandler.javaClass}", true)
 
         val intent = operationData
 

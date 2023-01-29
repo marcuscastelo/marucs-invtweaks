@@ -227,7 +227,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> extends Screen
             result.getNextOperations().forEach(TickedOperationPool.INSTANCE::addOperation);
 
             if (result.getSuccess() != OperationResult.SuccessType.PASS && (!result.getMessage().isEmpty())) {
-                warnPlayer("${result.success}: " + result.getMessage());
+                warnPlayer("${result.success}: " + result.getMessage(), true);
             }
         }
     }
