@@ -8,5 +8,5 @@ import net.minecraft.screen.slot.Slot
 data class Intent(
         val type: IntentType,
         val context: IntentContext,
-//        var massCraftRecipe: Recipe? = null, // TODO: Refactor to use a better way to handle mass crafting instead of this
+        var massCraftRecipe: Recipe? = null, // TODO: Refactor to use a better way to handle mass crafting instead of this
 )

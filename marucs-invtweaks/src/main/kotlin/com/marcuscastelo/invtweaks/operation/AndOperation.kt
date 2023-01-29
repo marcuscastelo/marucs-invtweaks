@@ -5,6 +5,8 @@ import com.marcuscastelo.invtweaks.InvTweaksMod
 class AndOperation(val operations: List<Operation<*>>) : Operation<Unit>() {
     override val operationData: Unit = Unit
 
+    constructor(vararg operations: Operation<*>) : this(operations.toList())
+
     override fun execute() = sequence {
         operations.forEach { operation ->
             InvTweaksMod.LOGGER.info("[AndOperation] Executing inner operation: $operation")

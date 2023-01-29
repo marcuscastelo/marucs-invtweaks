@@ -9,7 +9,6 @@ import com.marcuscastelo.invtweaks.intent.IntentType
 import com.marcuscastelo.invtweaks.operation.*
 import com.marcuscastelo.invtweaks.util.ChatUtils
 import com.marcuscastelo.invtweaks.util.ScreenController
-import net.minecraft.client.MinecraftClient
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.screen.slot.CraftingResultSlot
@@ -147,7 +146,7 @@ object CraftHelper {
         var ranOutOfMaterials = true // Assume we ran out of materials (until proven otherwise)
 
         val recipeItemCount = recipe.itemCount
-        val resourceItemCount = InventoryAnalyzer.countItems(resourcesSI.stacks)
+        val resourceItemCount = InventoryAnalyzer.calculateAmountPerItem(resourcesSI.stacks)
 
         for (i in recipe.stacks.indices) {
             val recipeStack = recipe.stacks[i]
@@ -215,10 +214,12 @@ object CraftHelper {
     fun massCraft(resultSlot: CraftingResultSlot, intent: Intent): OperationResult {
         val craftingSI = intent.context.otherInventories.craftingSI.orElse(null)
                 ?: return OperationResult.failure("No crafting inventory found")
-        val currentRecipe = Recipe(craftingSI.stacks, resultSlot.stack.copy())
+        val currentRecipe = intent.massCraftRecipe ?: Recipe(craftingSI.stacks, resultSlot.stack.copy())
         val craftingResultSI = intent.context.otherInventories.craftingResultSI.orElse(null)
                 ?: return OperationResult.failure("No crafting result inventory found")
         val resourcesSI = intent.context.otherInventories.playerCombinedSI
+
+        intent.massCraftRecipe = currentRecipe
 
         val replenishOperation = ReplenishRecipeOperation(
                 ReplenishData(
@@ -227,15 +228,24 @@ object CraftHelper {
                 )
         )
 
+
+        var intentType = IntentType.MOVE_STACK
+        var slotActionType = SlotActionType.QUICK_MOVE
+        val canResourcesFit = InventoryAnalyzer.canFit(resourcesSI.stacks, currentRecipe.output)
+        if (!canResourcesFit) {
+//            return OperationResult.failure("Not enough space in resources inventory")
+            intentType = IntentType.DROP_STACK
+            slotActionType = SlotActionType.THROW
+        }
         val craftIntent = Intent(
-                type = IntentType.MOVE_STACK,
+                type = intentType,
                 context = IntentContext(
                         screenHandler = craftingResultSI.screenHandler,
                         clickedSlot = resultSlot,
                         otherInventories = intent.context.otherInventories,
                         targetSI = resourcesSI,
                         clickedSI = craftingResultSI,
-                        slotActionType = SlotActionType.QUICK_MOVE,
+                        slotActionType = slotActionType,
                         button = 0,
                 )
         )
@@ -248,115 +258,20 @@ object CraftHelper {
                 )
         )
 
-        val operationsToChain = listOf(replenishOperation, DelayOperation(AndOperation(listOf(craftOperation, IntentedOperation(intent))), 20u))
-        val chainedOperations = AndOperation(operationsToChain)
-        val operations = listOf(chainedOperations)
+        val operations = listOf(
+                replenishOperation,
+                DelayOperation(
+                        AndOperation(
+                                craftOperation,
+                                DelayOperation(replenishOperation, 3u),
+                                DelayOperation(IntentedOperation(intent), 7u),
+                        ),
+                        2u)
+        )
         return OperationResult(
                 success = OperationResult.SuccessType.SUCCESS,
                 message = "Requesting replenish operation",
                 nextOperations = operations
         )
     }
-
-//    fun massCraft_old(resultSlot: CraftingResultSlot, intent: Intent): OperationResult {
-//        val inventories = intent.context.otherInventories
-//        val craftingSI = inventories.craftingSI.orElse(null)
-//                ?: return OperationResult.failure("No crafting inventory found")
-//        val resourcesSI = inventories.playerCombinedSI
-//
-//        val handler = craftingSI.screenHandler
-//
-//        return OperationResult.SUCCESS
-//        if (resultSlot.stack.isEmpty) {
-//            ChatUtils.warnPlayer("Nothing to craft")
-//            return OperationResult.SUCCESS
-//        }
-//
-//        val recipe = intent.massCraftRecipe ?: Recipe(craftingSI.stacks, resultSlot.stack)
-//        intent.massCraftRecipe = recipe
-//
-//        val screenController = ScreenController(handler)
-//
-//        val resources = InventoryAnalyzer.searchRecipeItems(resourcesSI.stacks, recipe)
-//
-//        val recipeItemCounts = InventoryAnalyzer.countItems(recipe.stacks)
-//        val resourceItemCounts = InventoryAnalyzer.countItems(resourcesSI.stacks)
-//
-//        fun craftingResultChanged() = recipe.output.item != resultSlot.stack.item //TODO: Check for count too (NBT, etc.)
-//
-//        fun craft() {
-//            if (craftingResultChanged()) {
-//                ChatUtils.warnPlayer(" 22 Item in crafting table is not the original one, not crafting anymore! ($recipe.output.item -> ${resultSlot.stack.item})")
-//                return
-//            }
-//
-//            fun isInventoryFull() = resourcesSI.stacks.all { it.isEmpty.not() }
-//            if (isInventoryFull())
-//                screenController.dropOne(resultSlot.id)
-//            else
-//                screenController.quickMove(resultSlot.id)
-//        }
-//
-//        if (craftingResultChanged()) {
-//            ChatUtils.warnPlayer("21 Item in crafting table is not the original one, not crafting anymore! ($recipe.output.item -> ${resultSlot.stack.item})")
-//            return OperationResult.SUCCESS
-//        }
-//
-//        val missingItems = recipeItemCounts.filter { (item, count) -> (resourceItemCounts[item] ?: 0) < count }
-//        if (missingItems.isNotEmpty()) {
-//            // If we're missing items, we can't replenish the recipe,
-//            // but there may be some items in the crafting grid that we can still craft
-//            spreadItemsInPlace(craftingSI)
-//            repeat(64) { craft() }
-//
-//            if (craftingResultChanged()) {
-//                ChatUtils.warnPlayer(" 23 Item in crafting table is not the original one, not crafting anymore! ($recipe.output.item -> ${resultSlot.stack.item})")
-//                return OperationResult.SUCCESS
-//            }
-//
-//            ChatUtils.warnPlayer("Missing items: $missingItems")
-//            return OperationResult.failure("Missing items: $missingItems")
-//        }
-//
-////        operationInfo.clickedSI = operationInfo.otherInventories.craftingResultSI.orElse(null)!!
-////        moveAll(operationInfo)
-////        moveStack(operationInfo)
-//
-//        repeat(1) {
-//            com.marcuscastelo.invtweaks.behavior.CraftHelper.replenishRecipe(craftingSI, resourcesSI, recipe)
-//            com.marcuscastelo.invtweaks.behavior.CraftHelper.spreadItemsInPlace(craftingSI)
-//
-//            if (craftingResultChanged()) {
-//                ChatUtils.warnPlayer("aa Item in crafting table is not the original one, not crafting anymore! ($recipe.output.item -> ${resultSlot.stack.item})")
-//                return OperationResult.SUCCESS
-//            }
-//
-//            craft()
-//            com.marcuscastelo.invtweaks.behavior.CraftHelper.replenishRecipe(craftingSI, resourcesSI, recipe)
-//            com.marcuscastelo.invtweaks.behavior.CraftHelper.spreadItemsInPlace(craftingSI)
-//
-//        }
-//
-//        val spreadOperation = OperationInfo(
-//                type = OperationType.SORT_NORMAL,
-//                clickedSI = craftingSI,
-//                clickedSlot = craftingSI.slots[1],
-//                otherInventories = operationInfo.otherInventories,
-//                targetSI = craftingSI,
-//        )
-//
-//        val ignoreOperation = OperationInfo(
-//                type = OperationType.IGNORE,
-//                clickedSI = craftingSI,
-//                clickedSlot = craftingSI.slots[1],
-//                otherInventories = operationInfo.otherInventories,
-//                targetSI = craftingSI,
-//        )
-
-//        return OperationResult(
-//                success = OperationResult.SuccessType.SUCCESS,
-//                message = "Crafted ${recipe.output.item.name.string}",
-//                nextOperations = listOf(IntentedOperation(intent))
-//        )
-//    }
 }

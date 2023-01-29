@@ -14,7 +14,7 @@ class Recipe
 
     val items: List<Item> = stacks.map { it.item }
     val materials: List<Item> = stacks.filter { it.count > 0 }.map { it.item }.filter { it != Items.AIR }.distinct()
-    val itemCount: Map<Item, Int> = InventoryAnalyzer.countItems(stacks)
+    val itemCount: Map<Item, Int> = InventoryAnalyzer.calculateAmountPerItem(stacks)
     val stacks get() = _stacks.map { it.copy() }
     val output get() = _output.copy()
 }

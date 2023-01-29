@@ -39,7 +39,6 @@ import static com.marcuscastelo.invtweaks.util.ChatUtils.warnPlayer;
 import static com.marcuscastelo.invtweaks.util.KeyUtils.isKeyPressed;
 
 @Mixin(HandledScreen.class)
-@Debug(export = true)
 public abstract class MixinHandledScreen<T extends ScreenHandler> extends Screen implements ParentElement {
     private final int MIDDLE_CLICK = GLFW.GLFW_MOUSE_BUTTON_MIDDLE;
 
@@ -138,8 +137,6 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> extends Screen
         invs.allInvs().forEach(inv -> warnPlayer(inv.getClass().getName()));
     }
 
-    ArrayList<Intent> queuedOperations = new ArrayList<>();
-
     @Inject(method = "onMouseClick(Lnet/minecraft/screen/slot/Slot;IILnet/minecraft/screen/slot/SlotActionType;)V", at = @At("HEAD"), cancellable = true)
     protected void onMouseClick(Slot slot, int invSlot, int pressedButton, SlotActionType actionType, CallbackInfo ci) {
         //In case of clicking outside of inventory, just ignore
@@ -185,7 +182,7 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> extends Screen
         }
 
         IntentContext context = new IntentContext(handler, slot, clickedSI, targetSI, actionType, pressedButton, screenInvs);
-        Intent intent = new Intent(intentType, context);
+        Intent intent = new Intent(intentType, context, null);
         IntentedOperation intentedOperation = new IntentedOperation(intent);
         TickedOperationPool.INSTANCE.addOperation(intentedOperation);
         ci.cancel();
@@ -210,9 +207,9 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> extends Screen
         }
     }
 
-    @Inject(at = @At("HEAD"), method = "tick")
+    @Inject(at = @At("RETURN"), method = "tick")
     public void tick(CallbackInfo ci) {
-        if (MinecraftClient.getInstance().world.getTime() % 2 != 0) return;
+//        if (MinecraftClient.getInstance().world.getTime() % 2 != 0) return;
         debugHotKeyTick();
         assert MinecraftClient.getInstance().world != null;
         InvTweaksMod.getLOGGER().debug("Tick #" + MinecraftClient.getInstance().world.getTime());
@@ -235,13 +232,8 @@ public abstract class MixinHandledScreen<T extends ScreenHandler> extends Screen
         }
     }
 
-    /**
-//     * @author Marcus
-//     * @reason Clear the operation pool when the screen is closed
-//     */
-//    @Overwrite
-//    public void close() {
-//        TickedOperationPool.INSTANCE.clear();
-//        super.close();
-//    }
+    @Inject(at = @At("RETURN"), method = "init")
+    public void init(CallbackInfo ci) {
+        TickedOperationPool.INSTANCE.clear();
+    }
 }

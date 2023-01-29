@@ -3,14 +3,14 @@ package com.marcuscastelo.invtweaks.operation
 import com.marcuscastelo.invtweaks.InvTweaksMod
 
 object TickedOperationPool {
-    private val operationLists = mutableListOf(mutableListOf<Operation<*>>())
+    private var operationLists = mutableListOf(mutableListOf<Operation<*>>())
 
     var currentTick: UInt = 0u
         private set
 
     fun clear() {
-        operationLists.clear()
-        operationLists.add(mutableListOf())
+        operationLists = mutableListOf(mutableListOf())
+        InvTweaksMod.LOGGER.info("[OperationPool] Clearing operation pool")
     }
 
     fun addOperation(operation: Operation<*>) {

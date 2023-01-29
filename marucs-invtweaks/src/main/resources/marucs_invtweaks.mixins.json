@@ -6,7 +6,9 @@
     "defaultRequire": 1
   },
   "client": [
-    "MixinHandledScreen"
+    "MixinHandledScreen",
+    "MixinMobEntity",
+    "MixinMerchantScreenHandler"
   ],
   "mixins": []
 }
